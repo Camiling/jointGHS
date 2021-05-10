@@ -56,18 +56,19 @@ cube M_theta(int N, int M, mat theta, mat &S, mat &sigma, mat &Lambda_sq, uvec p
     theta_mi_mi_Inv = sigma_mi_mi - sigma_i_mi*sigma_i_mi.t()/sigma_i_i(0,0);
     // Update estimates
     theta_i_i = theta_i_mi.t()*theta_mi_mi_Inv*theta_i_mi + M/S_i_i(0,0);
-    Lambda_diag.diag() = Lambda_sq_i_mi;
+    Lambda_diag.diag() = 1/Lambda_sq_i_mi;
     if (exist_group){
       // Find Tau matrix of all group combinations. 
-      Tau_diag.diag() = Tau_G.submat(remove_i,left_i);
-      theta_i_mi = -inv(S_i_i(0,0)*theta_mi_mi_Inv + 1/Lambda_diag/Tau_diag)*S_i_mi;
+      Tau_diag.diag() = 1/Tau_G.submat(remove_i,left_i);
+      theta_i_mi = -inv(S_i_i(0,0)*theta_mi_mi_Inv + 1*Lambda_diag*Tau_diag)*S_i_mi;
     }else {
-      theta_i_mi = -inv(S_i_i(0,0)*theta_mi_mi_Inv + 1/Lambda_diag/tau_sq)*S_i_mi;
+      theta_i_mi = -inv(S_i_i(0,0)*theta_mi_mi_Inv + 1*Lambda_diag*tau_sq)*S_i_mi;
     }
+    
+    
     // Avoid computing these quantities multiple times
     theta_prod_vec = theta_mi_mi_Inv*theta_i_mi;
     theta_prod_val = theta_i_i - theta_i_mi.t()*theta_prod_vec;
-
     // Save new sigma  
     sigma.submat(remove_i, remove_i) = theta_mi_mi_Inv + theta_prod_vec*theta_prod_vec.t()/theta_prod_val(0,0);
     sigma.submat(remove_i, left_i) = - theta_prod_vec/theta_prod_val(0,0);
