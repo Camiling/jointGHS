@@ -105,7 +105,7 @@ List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::m
     else {
       E_xiInv = E_xi(tau_sq);
     }
-      
+
     // M-step
     if (exist_group>0){
       Lambda_sq = M_lambda(N, M, theta, E_NuInv, exist_group, group, Tau_sq);
@@ -117,9 +117,10 @@ List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::m
       tau_sq = M_tau(M, theta, Lambda_sq, E_xiInv);
       theta_sigma_update = M_theta(N, M, theta, S, sigma, Lambda_sq, pseq, exist_group, group, S, tau_sq); // Pass S as dummy argument
     }
+
     theta_update = theta_sigma_update.slice(0);
     sigma = theta_sigma_update.slice(1);
-    
+
     if(savepath){
       theta_path.slice(count+1) = theta_update;
     }

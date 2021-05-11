@@ -54,31 +54,40 @@ cube M_theta(int N, int M, mat theta, mat &S, mat &sigma, mat &Lambda_sq, uvec p
     
     // Find inverse of theta submatrix
     theta_mi_mi_Inv = sigma_mi_mi - sigma_i_mi*sigma_i_mi.t()/sigma_i_i(0,0);
-    // Update estimates
-    theta_i_i = theta_i_mi.t()*theta_mi_mi_Inv*theta_i_mi + M/S_i_i(0,0);
+    //Rcout << "theta_mi_miInv diag: " << theta_mi_mi_Inv(1,1);  
+    
     Lambda_diag.diag() = 1/Lambda_sq_i_mi;
     if (exist_group){
       // Find Tau matrix of all group combinations. 
       Tau_diag.diag() = 1/Tau_G.submat(remove_i,left_i);
-      theta_i_mi = -inv(S_i_i(0,0)*theta_mi_mi_Inv + 1*Lambda_diag*Tau_diag)*S_i_mi;
+      theta_i_mi = -inv(S_i_i(0,0)*theta_mi_mi_Inv + Lambda_diag*Tau_diag)*S_i_mi;
     }else {
-      theta_i_mi = -inv(S_i_i(0,0)*theta_mi_mi_Inv + 1*Lambda_diag*tau_sq)*S_i_mi;
+      theta_i_mi = -inv(S_i_i(0,0)*theta_mi_mi_Inv + Lambda_diag/tau_sq)*S_i_mi;
     }
+    //Rcout << "theta_i_mi: " << theta_i_mi(1); 
     
+    theta_i_i = theta_i_mi.t()*theta_mi_mi_Inv*theta_i_mi + M/S_i_i(0,0);
+    
+    //Rcout << "theta_i_i: " << theta_i_i;  
     
     // Avoid computing these quantities multiple times
     theta_prod_vec = theta_mi_mi_Inv*theta_i_mi;
     theta_prod_val = theta_i_i - theta_i_mi.t()*theta_prod_vec;
+    //Rcout << "theta_prod_vec: " << theta_prod_vec(1);
+    //Rcout << "theta_prod_val: " << theta_prod_val; 
     // Save new sigma  
     sigma.submat(remove_i, remove_i) = theta_mi_mi_Inv + theta_prod_vec*theta_prod_vec.t()/theta_prod_val(0,0);
     sigma.submat(remove_i, left_i) = - theta_prod_vec/theta_prod_val(0,0);
     sigma.submat(left_i,remove_i) = sigma.submat(remove_i, left_i).t();
     sigma.submat(left_i, left_i) = 1/theta_prod_val;
     
+    
+    
     // Save new theta
     theta.submat(remove_i, left_i) = theta_i_mi;
     theta.submat(left_i,remove_i) = theta_i_mi.t();
     theta.submat(left_i,left_i) = theta_i_i;
+    
 
   }
   res.slice(0) = theta;

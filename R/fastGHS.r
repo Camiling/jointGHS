@@ -33,7 +33,7 @@ fastGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, meth
   }
 
   n <- dim(X)[1]
-  S <- t(X) %*% X * n # Should we really multiply by n??
+  S <- t(X) %*% X  # * n # Should we really multiply by n??
 
   # Check if vars should be grouped
   if(is.null(group)){
