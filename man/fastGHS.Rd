@@ -12,7 +12,7 @@ fastGHS(
   tau_sq = NULL,
   method = "ECM",
   epsilon = 1e-05,
-  maxitr = 10000,
+  maxitr = 1e+05,
   verbose = TRUE,
   savepath = FALSE,
   group = NULL,
