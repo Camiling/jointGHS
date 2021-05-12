@@ -143,7 +143,7 @@ List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::m
   }
   theta = theta_update;
   Rcout << " done" << endl;
-  
+  Q_vals= Q_vals.head(count);
   // Save results
   List list;
   list["S"] = S;
