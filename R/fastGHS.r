@@ -11,7 +11,7 @@
 #' @param epsilon tolerance for the convergence assessment
 #' @param maxitr maximum number of iterations
 #' @param verbose logical indicator of printing information at each iteration
-#' @param savepath logical indicator of saving the estimator at each iteration in the ECM algorithm
+#' @param savepath logical indicator of saving the estimator at each iteration in the ECM algorithm. Only available for p<200
 #' @param group grouping information, if variables are grouped. If provided, a vector of length \eqn{p} giving the group of each variable as a string, character or number. 
 #' @param save_Q should the value of the objective function at each step be saved?
 #' @return a fitted EMGS object

@@ -32,7 +32,7 @@ using namespace arma;
 //' @param epsilon tolerance for the convergence assessment
 //' @param verbose logical indicator of printing information at each iteration
 //' @param maxitr maximum number of iterations
-//' @param savepath logical indicator of saving the estimator at each iteration in the ECM algorithm
+//' @param savepath logical indicator of saving the estimator at each iteration in the ECM algorithm. Only available for p<200
 //' @param exist_group logical. Are the variables grouped?
 //' @param group grouping information.
 //' @param N_groups If exist_group==T, the number of groups
@@ -69,7 +69,14 @@ List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::m
   const int N = X.n_rows;
   
   // For saving variables
-  arma::cube theta_path(M, M, maxitr);
+  int save_dim;
+  if (M < 201 & savepath==true){
+    save_dim = maxitr;
+  }
+  else{
+    save_dim = 1;
+  }
+  arma::cube theta_path(M, M, save_dim);
   arma::uvec Q_vals(maxitr);
   
   // initialize intermediate values
@@ -105,7 +112,6 @@ List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::m
     else {
       E_xiInv = E_xi(tau_sq);
     }
-
     // M-step
     if (exist_group>0){
       Lambda_sq = M_lambda(N, M, theta, E_NuInv, exist_group, group, Tau_sq);

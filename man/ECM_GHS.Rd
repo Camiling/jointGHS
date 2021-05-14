@@ -39,7 +39,7 @@ ECM_GHS(
 
 \item{maxitr}{maximum number of iterations}
 
-\item{savepath}{logical indicator of saving the estimator at each iteration in the ECM algorithm}
+\item{savepath}{logical indicator of saving the estimator at each iteration in the ECM algorithm. Only available for p<200}
 
 \item{exist_group}{logical. Are the variables grouped?}
 

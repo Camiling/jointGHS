@@ -38,7 +38,7 @@ fastGHS(
 
 \item{verbose}{logical indicator of printing information at each iteration}
 
-\item{savepath}{logical indicator of saving the estimator at each iteration in the ECM algorithm}
+\item{savepath}{logical indicator of saving the estimator at each iteration in the ECM algorithm. Only available for p<200}
 
 \item{group}{grouping information, if variables are grouped. If provided, a vector of length \eqn{p} giving the group of each variable as a string, character or number.}
 

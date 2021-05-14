@@ -13,7 +13,7 @@
 #' @param epsilon tolerance for the convergence assessment
 #' @param verbose logical indicator of printing information at each iteration
 #' @param maxitr maximum number of iterations
-#' @param savepath logical indicator of saving the estimator at each iteration in the ECM algorithm
+#' @param savepath logical indicator of saving the estimator at each iteration in the ECM algorithm. Only available for p<200
 #' @param exist_group logical. Are the variables grouped?
 #' @param group grouping information.
 #' @param N_groups If exist_group==T, the number of groups
