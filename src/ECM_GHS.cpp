@@ -39,31 +39,14 @@ using namespace arma;
 //' @param save_Q should the value of the objective function at each step be saved?
 //' @param tau_sq initial value of squared global shrinkage parameter. If exist_group==T, a dummy value should be provided
 //' @param Tau_sq if exist_group==T, an \eqn{ngroup} by \eqn{ngroup} matrix of initial values of the squared global shrinkage parameters within and between groups. If exist_group==F, a dummy value should be provided
+//' @param use_ICM logical. Should ICM be used instead of ECM? Default value is false
 //' 
 //' @return A List with resulting ECM estimates, and saved path and objective function convergence information if requested
 //' 
 //' @export
 // [[Rcpp::export]]
-List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::mat Lambda_sq, double epsilon, bool verbose, int maxitr, bool savepath, int exist_group, arma::uvec group, arma::mat N_groups, bool save_Q, double tau_sq, arma::mat Tau_sq) {
-  // organize input
-  //mat X = as<mat>(X_r);
-  //mat S = as<mat>(S_r);
-  //mat theta = as<mat>(theta_r);
-  //mat sigma= as<mat>(sigma_r);
-  //mat Lambda_sq = as<mat>(Lambda_sq_r);
-  //int exist_group = as<int>(exist_group_r);
-  //mat Tau_sq = as<mat>(tau_sq_r); // only used if variables are grouped
-  //double tau_sq = as<double>(tau_sq_r); // Ungrouped variables
-  
-  //double epsilon = as<double>(epsilon_r);
-  //int maxitr = as<int>(maxitr_r);
-  //bool verbose = as<bool>(verbose_r);
-  //bool savepath = as<bool>(savepath_r);
-  //bool save_Q = as<bool>(save_Q_r);
-  //mat N_groups = as<mat>(N_groups_r);
-  //uvec group = as<uvec>(group_r);;
-  
-  
+List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::mat Lambda_sq, double epsilon, bool verbose, int maxitr, bool savepath, int exist_group, arma::uvec group, arma::mat N_groups, bool save_Q, double tau_sq, arma::mat Tau_sq, bool use_ICM) {
+
   // get dimensions
   const int M = X.n_cols;
   const int N = X.n_rows;
@@ -112,6 +95,17 @@ List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::m
     else {
       E_xiInv = E_xi(tau_sq);
     }
+    // Trick for simplicity of computations: multiply expectations by 2 to get modes
+    if(use_ICM){
+      if(exist_group>0){
+        E_XiInv = 2*E_XiInv;
+      }
+      else{
+        E_xiInv = 2*E_xiInv; 
+      }
+      E_NuInv = 2*E_NuInv;
+    }
+    
     // M-step
     if (exist_group>0){
       Lambda_sq = M_lambda(N, M, theta, E_NuInv, exist_group, group, Tau_sq);
@@ -163,6 +157,16 @@ List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::m
     list["tau_sq"] = tau_sq;
   }
   list["X"] = X;
+  if(use_ICM){
+    list["Nu"] = 1/E_NuInv;
+    if(exist_group>0){
+      list["Xi"] = 1/E_XiInv;
+    }
+    else{
+      list["xi"] = 1/E_xiInv;
+    }
+  }
+  
   if(save_Q){
     list["Q_vals"] = Q_vals;  
   }

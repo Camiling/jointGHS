@@ -30,7 +30,7 @@ fastGHS(
 
 \item{tau_sq}{initial value of squared global shrinkage parameter. If variables are grouped, a \eqn{ngroup} by \eqn{ngroup} matrix}
 
-\item{method}{the method to use. Default is \eqn{ECM}}
+\item{method}{the method to use. Default is \eqn{ECM}. Other options include \eqn{ICM}}
 
 \item{epsilon}{tolerance for the convergence assessment}
 

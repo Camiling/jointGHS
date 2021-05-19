@@ -19,7 +19,8 @@ ECM_GHS(
   N_groups,
   save_Q,
   tau_sq,
-  Tau_sq
+  Tau_sq,
+  use_ICM
 )
 }
 \arguments{
@@ -52,6 +53,8 @@ ECM_GHS(
 \item{tau_sq}{initial value of squared global shrinkage parameter. If exist_group==T, a dummy value should be provided}
 
 \item{Tau_sq}{if exist_group==T, an \eqn{ngroup} by \eqn{ngroup} matrix of initial values of the squared global shrinkage parameters within and between groups. If exist_group==F, a dummy value should be provided}
+
+\item{use_ICM}{logical. Should ICM be used instead of ECM? Default value is false}
 }
 \value{
 A List with resulting ECM estimates, and saved path and objective function convergence information if requested

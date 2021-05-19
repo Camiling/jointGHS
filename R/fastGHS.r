@@ -7,7 +7,7 @@
 #' @param sigma initial value of the \eqn{p} by \eqn{p} covariance matrix
 #' @param Lambda_sq initial value of matrix of squared local shrinkage parameters
 #' @param tau_sq initial value of squared global shrinkage parameter. If variables are grouped, a \eqn{ngroup} by \eqn{ngroup} matrix
-#' @param method the method to use. Default is \eqn{ECM}
+#' @param method the method to use. Default is \eqn{ECM}. Other options include \eqn{ICM}
 #' @param epsilon tolerance for the convergence assessment
 #' @param maxitr maximum number of iterations
 #' @param verbose logical indicator of printing information at each iteration
@@ -33,7 +33,7 @@ fastGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, meth
   }
 
   n <- dim(X)[1]
-  S <- t(X) %*% X  # * n # Should we really multiply by n??
+  S <- t(X) %*% X  #* n # Should we really multiply by n??
 
   # Check if vars should be grouped
   if(is.null(group)){
@@ -66,6 +66,9 @@ fastGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, meth
   }
   if(method=='ECM'){
     out <- ECM_GHS(as.matrix(X), S, theta , sigma, Lambda_sq, epsilon, verbose, maxitr, savepath, exist.group, group, N_groups, save_Q,tau_sq, Tau_sq)
+  }
+  else if(method=='ICM'){
+    out <- ECM_GHS(as.matrix(X), S, theta , sigma, Lambda_sq, epsilon, verbose, maxitr, savepath, exist.group, group, N_groups, save_Q,tau_sq, Tau_sq, use_ICM = TRUE)
   }
   else {
     out <- NULL
