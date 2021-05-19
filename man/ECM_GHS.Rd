@@ -20,7 +20,7 @@ ECM_GHS(
   save_Q,
   tau_sq,
   Tau_sq,
-  use_ICM
+  use_ICM = FALSE
 )
 }
 \arguments{

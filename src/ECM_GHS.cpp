@@ -45,7 +45,7 @@ using namespace arma;
 //' 
 //' @export
 // [[Rcpp::export]]
-List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::mat Lambda_sq, double epsilon, bool verbose, int maxitr, bool savepath, int exist_group, arma::uvec group, arma::mat N_groups, bool save_Q, double tau_sq, arma::mat Tau_sq, bool use_ICM) {
+List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::mat Lambda_sq, double epsilon, bool verbose, int maxitr, bool savepath, int exist_group, arma::uvec group, arma::mat N_groups, bool save_Q, double tau_sq, arma::mat Tau_sq, bool use_ICM=false) {
 
   // get dimensions
   const int M = X.n_cols;
