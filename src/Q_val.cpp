@@ -16,11 +16,11 @@ double Q_val(int N, int M, mat &theta, mat&S, mat &Lambda_sq, mat &E_NuInv, int 
   double sum_temp;
   if(exist_group>0){
     Tau_G_sq = Tau_sq.submat(group,group);
-    mat_temp = -2*log(Lambda_sq) - pow(theta,2)/Lambda_sq/Tau_G_sq/2 - E_NuInv/sqrt(Lambda_sq) - 2*log(Tau_G_sq) - (1+1/Tau_G_sq)%E_XiInv;
+    mat_temp = -2*log(Lambda_sq) - pow(theta,2)/Lambda_sq/Tau_G_sq/2 - E_NuInv/Lambda_sq - 2*log(Tau_G_sq) - (1+1/Tau_G_sq)%E_XiInv;
     sum_temp = (sum(sum(mat_temp)) - sum(mat_temp.diag()))/2;
     res = M/2*log(det(theta)) - trace(S*theta)/2 + sum_temp;
   } else{
-    mat_temp = -2*log(Lambda_sq) - pow(theta,2)/Lambda_sq/(2*tau_sq) - E_NuInv/sqrt(Lambda_sq);
+    mat_temp = -2*log(Lambda_sq) - pow(theta,2)/Lambda_sq/(2*tau_sq) - E_NuInv/Lambda_sq;
     sum_temp = (sum(sum(mat_temp)) - sum(mat_temp.diag()))/2;
     res = M/2*log(det(theta)) - trace(S*theta)/2 + sum_temp - (M*(M-1)/2+3)*log(tau_sq)/2 - E_xiInv/tau_sq;
   }
