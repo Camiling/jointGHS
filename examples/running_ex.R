@@ -126,6 +126,6 @@ tailoredGlasso::sparsity(theta.est6!=0)
 g6$sparsity
 # 0.006666667
 tailoredGlasso::precision(as.matrix(g6$theta!=0), theta.est6!=0)
-# 0.3333333
+# 0.6187291
 tailoredGlasso::recall(as.matrix(g6$theta!=0), theta.est6!=0)
-
+# 0.6187291
