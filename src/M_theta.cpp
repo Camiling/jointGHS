@@ -14,7 +14,6 @@ cube M_theta(int N, int M, mat theta, mat &S, mat &sigma, mat &Lambda_sq, uvec p
   mat theta_new = theta;
   mat sigma_new = theta;
   int i;
-  vec u(M-1);
   uvec remove_i(M-1); // All indices except i
   uvec left_i(1); // The removed index
   mat theta_mi_mi(M-1, M-1); // Partioned precision matrix

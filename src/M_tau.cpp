@@ -11,6 +11,7 @@ using namespace arma;
 double M_tau(int M, mat &theta, mat &Lambda_sq, double E_xi) {
   // maximize Tau_sq
   // No grouping
+  
   // Maybe Rewrite: sum theta_ij/lambda_ij to sum exp (log theta_ij^2 - log lambda_ij^2)
   // double sum_temp = (exp(log(pow(theta,2))-log(Lambda_sq)) - );
   mat mat_temp = pow(theta,2)/Lambda_sq;

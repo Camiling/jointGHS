@@ -53,14 +53,16 @@ List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::m
   
   // For saving variables
   int save_dim;
-  if (M < 201 & savepath==true){
+  if (M < 201 & savepath==true){ // Saving exhausts memory is M>201
     save_dim = maxitr;
   }
   else{
     save_dim = 1;
   }
   arma::cube theta_path(M, M, save_dim);
-  arma::uvec Q_vals(maxitr);
+  arma::vec Q_vals(maxitr);
+  double Q_val_old=-numeric_limits<double>::max();
+  double Q_val_new;
   
   // initialize intermediate values
   int niter,i, count;
@@ -74,11 +76,13 @@ List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::m
  arma::mat theta_update = theta; // Save previous estimate to assess convergence
  arma::mat E_NuInv(M,M);
  arma::mat E_XiInv(M,M); // Used if variables are grouped
-  double E_xiInv; // Used if variables are not grouped
-  arma::cube theta_sigma_update(M,M,2);
-  eps = epsilon + 1;
-  niter = 1;
-  count = 0;
+ double E_xiInv; // Used if variables are not grouped
+ arma::cube theta_sigma_update(M,M,2);
+ eps = epsilon + 1;
+ niter = 1;
+ count = 0;
+ List list;
+ 
   
   if(savepath){
     theta_path.slice(0) = theta;
@@ -124,13 +128,22 @@ List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::m
     if(savepath){
       theta_path.slice(count+1) = theta_update;
     }
-    if(save_Q){
-      if(exist_group>0){
-        Q_vals(count) = Q_val(N, M, theta, S, Lambda_sq, E_NuInv, exist_group, group, Tau_sq, E_XiInv); 
-      }else {
-        Q_vals(count) = Q_val(N, M, theta, S, Lambda_sq, E_NuInv, exist_group, group, S, S, tau_sq, E_xiInv);  // Pass S as dummy argument
-      }
+    // Check that objective function value has increased
+    if(exist_group>0){
+      Q_val_new = Q_val(N, M, theta, S, Lambda_sq, E_NuInv, exist_group, group, Tau_sq, E_XiInv); 
+    }else {
+      Q_val_new = Q_val(N, M, theta, S, Lambda_sq, E_NuInv, exist_group, group, S, S, tau_sq, E_xiInv);  // Pass S as dummy argument
     }
+    if(Q_val_old>Q_val_new){
+      Rcout << "Error: objective function decreasing" << endl;
+      list["Q_val_old"] = Q_val_old;
+      list["Q_val_new"] = Q_val_new;
+      return list;
+    }
+    if(save_Q){
+      Q_vals(count) = Q_val_new;
+    }
+    Q_val_old = Q_val_new;
     
     eps = max(max(abs(theta_update - theta)));
     theta = theta_update;
@@ -145,7 +158,6 @@ List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::m
   Rcout << " done" << endl;
   Q_vals= Q_vals.head(count);
   // Save results
-  List list;
   list["S"] = S;
   list["theta"] = theta;  
   list["sigma"] = sigma;

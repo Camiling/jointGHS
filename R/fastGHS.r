@@ -25,11 +25,37 @@ fastGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, meth
   if(is.null(theta)){
     theta <- diag(1,p)
   }
+  else{
+    if(!isSymmetric(theta)){
+      theta=as.matrix(Matrix::forceSymmetric(theta))
+      cat('Initial theta not symmetric, forcing symmetry...')
+    }
+    if(ncol(theta)!= p | nrow(theta)!=p | !matrixcalc::is.positive.definite(theta+0)){
+      cat('Error: initial theta must be pxp and positive definite \n')
+      return()
+    } 
+  }
   if(is.null(sigma)){
     sigma <- diag(1,p)
   }
+  else{
+    if(!isSymmetric(sigma)){
+      sigma=as.matrix(Matrix::forceSymmetric(sigma))
+      cat('Initial sigma not symmetric, forcing symmetry...\n')
+    }
+    if(ncol(sigma)!= p | nrow(sigma)!=p | !matrixcalc::is.positive.definite(sigma+0)){
+      cat('Error: initial sigma must be pxp and positive definite \n')
+      return()
+    } 
+  }
   if(is.null(Lambda_sq)){
     Lambda_sq <- matrix(rep(1,p^2),ncol=p)
+  }
+  else{
+    if(any(Lambda_sq<0)){
+      cat('Error: negative Lambda_sq values are not allowed \n')
+      return()
+    } 
   }
 
   n <- dim(X)[1]
@@ -43,9 +69,19 @@ fastGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, meth
     if(is.null(tau_sq)){
       tau_sq <- 1
     }
+    else{
+      if(tau_sq<0){
+        cat('Error: negative tau_sq is not allowed \n')
+        return()
+      }
+    }
     Tau_sq = S # Dummy variable
   }
   else{
+    if(length(group)!=ncol(X)){
+      cat('Error: number of group assignments and variables must match \n')
+      return()
+    }
     group <- match(group, unique(group)) - 1
     exist.group <- length(unique(group))
     # Create matrix for storing number of observations in each group combination. 
@@ -60,6 +96,10 @@ fastGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, meth
       Tau_sq <- matrix(rep(1,exist.group^2),ncol=exist.group)
     }
     else{
+      if(tau_sq<0){
+        cat('Error: negative tau_sq is not allowed \n')
+        return()
+      }
       Tau_sq = tau_sq;
     }
     tau_sq = 1; # Dummy variable
