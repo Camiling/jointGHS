@@ -20,7 +20,9 @@ ECM_GHS(
   save_Q,
   tau_sq,
   Tau_sq,
-  use_ICM = FALSE
+  machine_eps,
+  use_ICM = FALSE,
+  stop_underflow = FALSE
 )
 }
 \arguments{
@@ -53,6 +55,8 @@ ECM_GHS(
 \item{tau_sq}{initial value of squared global shrinkage parameter. If exist_group==T, a dummy value should be provided}
 
 \item{Tau_sq}{if exist_group==T, an \eqn{ngroup} by \eqn{ngroup} matrix of initial values of the squared global shrinkage parameters within and between groups. If exist_group==F, a dummy value should be provided}
+
+\item{machine_eps}{numerical. The machine precision}
 
 \item{use_ICM}{logical. Should ICM be used instead of ECM? Default value is false}
 }

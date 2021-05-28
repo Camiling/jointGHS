@@ -10,5 +10,5 @@ using namespace Rcpp;
 using namespace arma;
 
 
-List ECM_GHS(mat X, mat S, mat theta, mat sigma, mat Lambda_sq, double epsilon, bool verbose, int maxitr, bool savepath, int exist_group, uvec group, mat N_groups, bool save_Q, double tau_sq, mat Tau_sq, bool use_ICM = false)
+List ECM_GHS(mat X, mat S, mat theta, mat sigma, mat Lambda_sq, double epsilon, bool verbose, int maxitr, bool savepath, int exist_group, uvec group, mat N_groups, bool save_Q, double tau_sq, mat Tau_sq, double machine_eps, bool use_ICM = false, bool stop_underflow=true)
 #endif

@@ -8,14 +8,22 @@ using namespace std;
 using namespace Rcpp;
 using namespace arma;
 
-double M_tau(int M, mat &theta, mat &Lambda_sq, double E_xi) {
+double M_tau(int M, mat &theta, mat &Lambda_sq, double E_xi, double machine_eps, bool stop_underflow) {
   // maximize Tau_sq
   // No grouping
   
-  // Maybe Rewrite: sum theta_ij/lambda_ij to sum exp (log theta_ij^2 - log lambda_ij^2)
   // double sum_temp = (exp(log(pow(theta,2))-log(Lambda_sq)) - );
-  mat mat_temp = pow(theta,2)/Lambda_sq;
+  //mat mat_temp = pow(theta,2)/Lambda_sq;
+  //double sum_temp = (sum(sum(mat_temp)) - sum(mat_temp.diag()))/2;
+  // Using log trick
+  mat mat_temp = exp(log(pow(theta,2)) - log(Lambda_sq));
   double sum_temp = (sum(sum(mat_temp)) - sum(mat_temp.diag()))/2;
-  double tau_sq = (2*sum_temp + 4*E_xi)/(M*(M-1)+6);
+  double tau_sq = (2*sum_temp + 4*E_xi)/(M*(M-1)+6)*10;
+  
+  if(stop_underflow){
+    if(tau_sq<machine_eps){
+      tau_sq = machine_eps;
+    }
+  }
   return tau_sq;
 }

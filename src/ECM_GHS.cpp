@@ -39,13 +39,14 @@ using namespace arma;
 //' @param save_Q should the value of the objective function at each step be saved?
 //' @param tau_sq initial value of squared global shrinkage parameter. If exist_group==T, a dummy value should be provided
 //' @param Tau_sq if exist_group==T, an \eqn{ngroup} by \eqn{ngroup} matrix of initial values of the squared global shrinkage parameters within and between groups. If exist_group==F, a dummy value should be provided
+//' @param machine_eps numerical. The machine precision
 //' @param use_ICM logical. Should ICM be used instead of ECM? Default value is false
 //' 
 //' @return A List with resulting ECM estimates, and saved path and objective function convergence information if requested
 //' 
 //' @export
 // [[Rcpp::export]]
-List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::mat Lambda_sq, double epsilon, bool verbose, int maxitr, bool savepath, int exist_group, arma::uvec group, arma::mat N_groups, bool save_Q, double tau_sq, arma::mat Tau_sq, bool use_ICM=false) {
+List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::mat Lambda_sq, double epsilon, bool verbose, int maxitr, bool savepath, int exist_group, arma::uvec group, arma::mat N_groups, bool save_Q, double tau_sq, arma::mat Tau_sq, double machine_eps, bool use_ICM=false, bool stop_underflow=false) {
 
   // get dimensions
   const int M = X.n_cols;
@@ -112,14 +113,14 @@ List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::m
     
     // M-step
     if (exist_group>0){
-      Lambda_sq = M_lambda(N, M, theta, E_NuInv, exist_group, group, Tau_sq);
-      Tau_sq = M_tau_group(M, theta, Lambda_sq, exist_group, group, N_groups, E_XiInv);
-      theta_sigma_update = M_theta(N, M, theta, S, sigma, Lambda_sq, pseq, exist_group, group, Tau_sq);
+      Lambda_sq = M_lambda(N, M, theta, E_NuInv, exist_group, group, Tau_sq, machine_eps, stop_underflow);
+      Tau_sq = M_tau_group(M, theta, Lambda_sq, exist_group, group, N_groups, E_XiInv, machine_eps, stop_underflow);
+      theta_sigma_update = M_theta(N, M, theta, S, sigma, Lambda_sq, pseq, exist_group, group, Tau_sq, machine_eps, stop_underflow);
     }
     else{
-      Lambda_sq = M_lambda(N, M, theta, E_NuInv, exist_group, group, S, tau_sq);
-      tau_sq = M_tau(M, theta, Lambda_sq, E_xiInv);
-      theta_sigma_update = M_theta(N, M, theta, S, sigma, Lambda_sq, pseq, exist_group, group, S, tau_sq); // Pass S as dummy argument
+      Lambda_sq = M_lambda(N, M, theta, E_NuInv, exist_group, group, S, machine_eps, stop_underflow, tau_sq);
+      tau_sq = M_tau(M, theta, Lambda_sq, E_xiInv, machine_eps, stop_underflow);
+      theta_sigma_update = M_theta(N, M, theta, S, sigma, Lambda_sq, pseq, exist_group, group, S,machine_eps, stop_underflow, tau_sq); // Pass S as dummy argument
     }
 
     theta_update = theta_sigma_update.slice(0);
@@ -128,13 +129,14 @@ List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::m
     if(savepath){
       theta_path.slice(count+1) = theta_update;
     }
-    // Check that objective function value has increased
-    if(exist_group>0){
+    // Evaluate objective function if ICM is used, or if it is to be saved
+    if((use_ICM || save_Q) & (exist_group>0)){
       Q_val_new = Q_val(N, M, theta, S, Lambda_sq, E_NuInv, exist_group, group, Tau_sq, E_XiInv); 
-    }else {
+    }else if (use_ICM || save_Q) {
       Q_val_new = Q_val(N, M, theta, S, Lambda_sq, E_NuInv, exist_group, group, S, S, tau_sq, E_xiInv);  // Pass S as dummy argument
     }
-    if(Q_val_old>Q_val_new){
+    // If ICM is used, check that objective function value has increased
+    if(use_ICM & (Q_val_old>Q_val_new)){
       Rcout << "Error: objective function decreasing" << endl;
       list["Q_val_old"] = Q_val_old;
       list["Q_val_new"] = Q_val_new;
@@ -143,8 +145,10 @@ List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::m
     if(save_Q){
       Q_vals(count) = Q_val_new;
     }
-    Q_val_old = Q_val_new;
-    
+    // Update estimate
+    if (use_ICM || save_Q) {
+      Q_val_old = Q_val_new;
+    } 
     eps = max(max(abs(theta_update - theta)));
     theta = theta_update;
     count++;

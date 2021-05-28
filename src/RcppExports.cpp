@@ -12,8 +12,8 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // ECM_GHS
-List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::mat Lambda_sq, double epsilon, bool verbose, int maxitr, bool savepath, int exist_group, arma::uvec group, arma::mat N_groups, bool save_Q, double tau_sq, arma::mat Tau_sq, bool use_ICM);
-RcppExport SEXP _fastGHS_ECM_GHS(SEXP XSEXP, SEXP SSEXP, SEXP thetaSEXP, SEXP sigmaSEXP, SEXP Lambda_sqSEXP, SEXP epsilonSEXP, SEXP verboseSEXP, SEXP maxitrSEXP, SEXP savepathSEXP, SEXP exist_groupSEXP, SEXP groupSEXP, SEXP N_groupsSEXP, SEXP save_QSEXP, SEXP tau_sqSEXP, SEXP Tau_sqSEXP, SEXP use_ICMSEXP) {
+List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::mat Lambda_sq, double epsilon, bool verbose, int maxitr, bool savepath, int exist_group, arma::uvec group, arma::mat N_groups, bool save_Q, double tau_sq, arma::mat Tau_sq, double machine_eps, bool use_ICM, bool stop_underflow);
+RcppExport SEXP _fastGHS_ECM_GHS(SEXP XSEXP, SEXP SSEXP, SEXP thetaSEXP, SEXP sigmaSEXP, SEXP Lambda_sqSEXP, SEXP epsilonSEXP, SEXP verboseSEXP, SEXP maxitrSEXP, SEXP savepathSEXP, SEXP exist_groupSEXP, SEXP groupSEXP, SEXP N_groupsSEXP, SEXP save_QSEXP, SEXP tau_sqSEXP, SEXP Tau_sqSEXP, SEXP machine_epsSEXP, SEXP use_ICMSEXP, SEXP stop_underflowSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -32,14 +32,16 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type save_Q(save_QSEXP);
     Rcpp::traits::input_parameter< double >::type tau_sq(tau_sqSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type Tau_sq(Tau_sqSEXP);
+    Rcpp::traits::input_parameter< double >::type machine_eps(machine_epsSEXP);
     Rcpp::traits::input_parameter< bool >::type use_ICM(use_ICMSEXP);
-    rcpp_result_gen = Rcpp::wrap(ECM_GHS(X, S, theta, sigma, Lambda_sq, epsilon, verbose, maxitr, savepath, exist_group, group, N_groups, save_Q, tau_sq, Tau_sq, use_ICM));
+    Rcpp::traits::input_parameter< bool >::type stop_underflow(stop_underflowSEXP);
+    rcpp_result_gen = Rcpp::wrap(ECM_GHS(X, S, theta, sigma, Lambda_sq, epsilon, verbose, maxitr, savepath, exist_group, group, N_groups, save_Q, tau_sq, Tau_sq, machine_eps, use_ICM, stop_underflow));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_fastGHS_ECM_GHS", (DL_FUNC) &_fastGHS_ECM_GHS, 16},
+    {"_fastGHS_ECM_GHS", (DL_FUNC) &_fastGHS_ECM_GHS, 18},
     {NULL, NULL, 0}
 };
 

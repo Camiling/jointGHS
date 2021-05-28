@@ -20,12 +20,13 @@
 #' @param save_Q should the value of the objective function at each step be saved?
 #' @param tau_sq initial value of squared global shrinkage parameter. If exist_group==T, a dummy value should be provided
 #' @param Tau_sq if exist_group==T, an \eqn{ngroup} by \eqn{ngroup} matrix of initial values of the squared global shrinkage parameters within and between groups. If exist_group==F, a dummy value should be provided
+#' @param machine_eps numerical. The machine precision
 #' @param use_ICM logical. Should ICM be used instead of ECM? Default value is false
 #' 
 #' @return A List with resulting ECM estimates, and saved path and objective function convergence information if requested
 #' 
 #' @export
-ECM_GHS <- function(X, S, theta, sigma, Lambda_sq, epsilon, verbose, maxitr, savepath, exist_group, group, N_groups, save_Q, tau_sq, Tau_sq, use_ICM = FALSE) {
-    .Call(`_fastGHS_ECM_GHS`, X, S, theta, sigma, Lambda_sq, epsilon, verbose, maxitr, savepath, exist_group, group, N_groups, save_Q, tau_sq, Tau_sq, use_ICM)
+ECM_GHS <- function(X, S, theta, sigma, Lambda_sq, epsilon, verbose, maxitr, savepath, exist_group, group, N_groups, save_Q, tau_sq, Tau_sq, machine_eps, use_ICM = FALSE, stop_underflow = FALSE) {
+    .Call(`_fastGHS_ECM_GHS`, X, S, theta, sigma, Lambda_sq, epsilon, verbose, maxitr, savepath, exist_group, group, N_groups, save_Q, tau_sq, Tau_sq, machine_eps, use_ICM, stop_underflow)
 }
 

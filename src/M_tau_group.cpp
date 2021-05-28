@@ -8,7 +8,7 @@ using namespace std;
 using namespace Rcpp;
 using namespace arma;
 
-mat M_tau_group(int M, mat &theta, mat &Lambda_sq, int exist_group, uvec &group, mat &N_groups, mat E_xi) {
+mat M_tau_group(int M, mat &theta, mat &Lambda_sq, int exist_group, uvec &group, mat &N_groups, mat E_xi, double machine_eps, bool stop_underflow) {
   // maximize Tau_sq
   // With grouping, so E_xi is now exist_group x exist_group
   mat mat_temp = pow(theta,2)/Lambda_sq;
@@ -27,5 +27,18 @@ mat M_tau_group(int M, mat &theta, mat &Lambda_sq, int exist_group, uvec &group,
   }
   // N_groups is an ngroups x ngroups mat with the number of variables in each combination group
   mat tau_sq = (sum_temp + 2*E_xi%N_groups)/(4*N_groups);
+  
+  if(stop_underflow){
+    if(min(min(tau_sq)) < machine_eps){
+      for(i=0; i<M; i++){
+        for(j=0; j<M; j++){
+          if(tau_sq(i,j) < machine_eps){
+            tau_sq(i,j) = machine_eps;
+          }
+        }
+      }
+    }
+  }
+
   return tau_sq; 
 }

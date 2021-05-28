@@ -16,7 +16,8 @@ fastGHS(
   verbose = TRUE,
   savepath = FALSE,
   group = NULL,
-  save_Q = F
+  save_Q = F,
+  stop_underflow = FALSE
 )
 }
 \arguments{
@@ -43,6 +44,8 @@ fastGHS(
 \item{group}{grouping information, if variables are grouped. If provided, a vector of length \eqn{p} giving the group of each variable as a string, character or number.}
 
 \item{save_Q}{should the value of the objective function at each step be saved?}
+
+\item{stop_underflow}{should underflow be avoided by never allowing doubles to be smaller than the machine precision?}
 }
 \value{
 a fitted EMGS object
