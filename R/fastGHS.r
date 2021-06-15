@@ -14,11 +14,12 @@
 #' @param savepath logical indicator of saving the estimator at each iteration in the ECM algorithm. Only available for p<200
 #' @param group grouping information, if variables are grouped. If provided, a vector of length \eqn{p} giving the group of each variable as a string, character or number. 
 #' @param save_Q should the value of the objective function at each step be saved?
+#' @param fix_tau logical. Should tau be fixed?
 #' @param stop_underflow should underflow be avoided by never allowing doubles to be smaller than the machine precision?
 #' @return a fitted EMGS object
 #' @export 
 #' 
-fastGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, method= 'ECM',epsilon = 1e-5, maxitr = 1e5, verbose=TRUE, savepath = FALSE,  group=NULL, save_Q = F, stop_underflow = FALSE){
+fastGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, method= 'ECM',epsilon = 1e-5, maxitr = 1e5, verbose=TRUE, savepath = FALSE,  group=NULL, save_Q = F, fix_tau = FALSE, stop_underflow = FALSE){
 
   p <- dim(X)[2]
   
@@ -60,7 +61,7 @@ fastGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, meth
   }
 
   n <- dim(X)[1]
-  S <- t(X) %*% X  #* n # Should we really multiply by n??
+  S <- t(X) %*% X
 
   # Check if vars should be grouped
   if(is.null(group)){
@@ -107,10 +108,10 @@ fastGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, meth
   }
   machine_eps = .Machine$double.eps
   if(method=='ECM'){
-    out <- ECM_GHS(as.matrix(X), S, theta , sigma, Lambda_sq, epsilon, verbose, maxitr, savepath, exist.group, group, N_groups, save_Q,tau_sq, Tau_sq, machine_eps, use_ICM = FALSE, stop_underflow=stop_underflow)
+    out <- ECM_GHS(as.matrix(X), S, theta , sigma, Lambda_sq, epsilon, verbose, maxitr, savepath, exist.group, group, N_groups, save_Q,tau_sq, Tau_sq, machine_eps, use_ICM = FALSE, fix_tau = fix_tau, stop_underflow=stop_underflow)
   }
   else if(method=='ICM'){
-    out <- ECM_GHS(as.matrix(X), S, theta , sigma, Lambda_sq, epsilon, verbose, maxitr, savepath, exist.group, group, N_groups, save_Q,tau_sq, Tau_sq, machine_eps, use_ICM = TRUE, stop_underflow=stop_underflow)
+    out <- ECM_GHS(as.matrix(X), S, theta , sigma, Lambda_sq, epsilon, verbose, maxitr, savepath, exist.group, group, N_groups, save_Q,tau_sq, Tau_sq, machine_eps, use_ICM = TRUE, fix_tau = fix_tau, stop_underflow=stop_underflow)
   }
   else {
     out <- NULL

@@ -46,7 +46,7 @@ using namespace arma;
 //' 
 //' @export
 // [[Rcpp::export]]
-List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::mat Lambda_sq, double epsilon, bool verbose, int maxitr, bool savepath, int exist_group, arma::uvec group, arma::mat N_groups, bool save_Q, double tau_sq, arma::mat Tau_sq, double machine_eps, bool use_ICM=false, bool stop_underflow=false) {
+List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::mat Lambda_sq, double epsilon, bool verbose, int maxitr, bool savepath, int exist_group, arma::uvec group, arma::mat N_groups, bool save_Q, double tau_sq, arma::mat Tau_sq, double machine_eps, bool use_ICM=false, bool fix_tau = false, bool stop_underflow=false) {
 
   // get dimensions
   const int M = X.n_cols;
@@ -54,7 +54,7 @@ List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::m
   
   // For saving variables
   int save_dim;
-  if (M < 201 & savepath==true){ // Saving exhausts memory is M>201
+  if (M < 201 & savepath==true){ // Saving exhausts memory if M>201
     save_dim = maxitr;
   }
   else{
@@ -62,7 +62,7 @@ List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::m
   }
   arma::cube theta_path(M, M, save_dim);
   arma::vec Q_vals(maxitr);
-  double Q_val_old=-numeric_limits<double>::max();
+  double Q_val_old= -numeric_limits<double>::max();
   double Q_val_new;
   
   // initialize intermediate values
@@ -114,12 +114,16 @@ List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::m
     // M-step
     if (exist_group>0){
       Lambda_sq = M_lambda(N, M, theta, E_NuInv, exist_group, group, Tau_sq, machine_eps, stop_underflow);
-      Tau_sq = M_tau_group(M, theta, Lambda_sq, exist_group, group, N_groups, E_XiInv, machine_eps, stop_underflow);
+      if (fix_tau == false){
+        Tau_sq = M_tau_group(M, theta, Lambda_sq, exist_group, group, N_groups, E_XiInv, machine_eps, stop_underflow); 
+      }
       theta_sigma_update = M_theta(N, M, theta, S, sigma, Lambda_sq, pseq, exist_group, group, Tau_sq, machine_eps, stop_underflow);
     }
     else{
       Lambda_sq = M_lambda(N, M, theta, E_NuInv, exist_group, group, S, machine_eps, stop_underflow, tau_sq);
-      tau_sq = M_tau(M, theta, Lambda_sq, E_xiInv, machine_eps, stop_underflow);
+      if (fix_tau == false){
+        tau_sq = M_tau(M, theta, Lambda_sq, E_xiInv, machine_eps, stop_underflow);
+      }
       theta_sigma_update = M_theta(N, M, theta, S, sigma, Lambda_sq, pseq, exist_group, group, S,machine_eps, stop_underflow, tau_sq); // Pass S as dummy argument
     }
 

@@ -16,14 +16,20 @@ double M_tau(int M, mat &theta, mat &Lambda_sq, double E_xi, double machine_eps,
   //mat mat_temp = pow(theta,2)/Lambda_sq;
   //double sum_temp = (sum(sum(mat_temp)) - sum(mat_temp.diag()))/2;
   // Using log trick
-  mat mat_temp = exp(log(pow(theta,2)) - log(Lambda_sq));
+  //mat mat_temp = exp(log(pow(theta,2)) - log(Lambda_sq));
+  //double sum_temp = (sum(sum(mat_temp)) - sum(mat_temp.diag()))/2;
+  //double tau_sq = (2*sum_temp + 4*E_xi)/(M*(M-1)+6)*10;
+  
+  mat mat_temp = exp(2*log(abs(theta)) - log(Lambda_sq));
   double sum_temp = (sum(sum(mat_temp)) - sum(mat_temp.diag()))/2;
-  double tau_sq = (2*sum_temp + 4*E_xi)/(M*(M-1)+6)*10;
+  double tau_sq = (2*sum_temp + 4*E_xi)/(M*(M-1)+6);
   
   if(stop_underflow){
     if(tau_sq<machine_eps){
       tau_sq = machine_eps;
     }
   }
+
+  //Rcout << "Tau = " << tau_sq << "\n";
   return tau_sq;
 }

@@ -1,7 +1,8 @@
+// [[Rcpp::depends(RcppArmadillo)]]
+#include "M_lambda.h"
 #include <stdio.h>
 #include <math.h> 
 #include <RcppArmadillo.h>
-#include "M_lambda.h"
 
 using namespace std;
 using namespace Rcpp;
@@ -15,7 +16,9 @@ mat M_lambda(int N, int M, mat &theta,mat E_Nu, int exist_group, uvec &group,mat
     mat tau_G = Tau_sq.submat(group,group); // MxM mat containing tau of each variable combination
     Lambda_sq_new = (E_Nu + pow(theta,2)/tau_G/2)/2;
   }else{
-    Lambda_sq_new = (E_Nu + pow(theta,2)/tau_sq/2)/2;
+    //Lambda_sq_new = (E_Nu + pow(theta,2)/tau_sq/2)/2;
+    // Use log-exp trick
+    Lambda_sq_new = (E_Nu + exp(2*log(abs(theta))- log(2*tau_sq)))/2;
   }
   int i; 
   int j; 

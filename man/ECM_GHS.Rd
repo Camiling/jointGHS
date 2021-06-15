@@ -22,6 +22,7 @@ ECM_GHS(
   Tau_sq,
   machine_eps,
   use_ICM = FALSE,
+  fix_tau = FALSE,
   stop_underflow = FALSE
 )
 }

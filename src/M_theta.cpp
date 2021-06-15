@@ -7,12 +7,12 @@ using namespace std;
 using namespace arma;
 using namespace Rcpp;
 
-cube M_theta(int N, int M, mat theta, mat &S, mat &sigma, mat &Lambda_sq, uvec pseq, int exist_group, uvec &group, mat Tau_sq, double machine_eps,bool stop_underflow, double tau_sq) {
+cube M_theta(int N, int M, mat theta, mat &S, mat sigma, mat &Lambda_sq, uvec pseq, int exist_group, uvec &group, mat Tau_sq, double machine_eps,bool stop_underflow, double tau_sq) {
   
   // Return a MxMx2 cube with theta and sigma
   cube res(M,M,2);
   mat theta_new = theta;
-  mat sigma_new = theta;
+  mat sigma_new = sigma;
   int i; int j;
   uvec remove_i(M-1); // All indices except i
   uvec left_i(1); // The removed index
@@ -101,8 +101,7 @@ cube M_theta(int N, int M, mat theta, mat &S, mat &sigma, mat &Lambda_sq, uvec p
     theta.submat(remove_i, left_i) = theta_i_mi;
     theta.submat(left_i,remove_i) = theta_i_mi.t();
     theta.submat(left_i,left_i) = theta_i_i;
-
-
+    
   }
   res.slice(0) = theta;
   res.slice(1) = sigma;
