@@ -7,7 +7,7 @@ source('GHS.R')
 ## See how we can get the correct magnitude of precision matrix elements by fixing tau
 
 # Note that now thresholding is not an issue: we either get precision matrix elements of the correct magnitude (0.1-0.2), 
-# or almost zero (<1e-5) => easy to theshold and perform valiable selection. 
+# or almost zero (<1e-5) => easy to threshold and perform variable selection. MCMC GHS does not have the same property. 
 
 # Exact value of tau is not too important => a wide range can give the same sparsity level. Lambda adapts to its size. 
 
@@ -81,8 +81,16 @@ theta.est.fix[1:5,1:5]
 #[5,] 0.0000000 0.0000000 0.2528399 0.0000000 1.0000000
 
 
-
 # Notably, we need a larger tau in ECMGHS than MCMC GHS. 
+
+# Compare to the graphical lasso by forcing it to the same sparsity as the ECM GHS esitmate
+gg = huge(x.sf.fix,method='glasso', lambda=0.465)
+gg$sparsity
+# 0.01632653
+tailoredGlasso::precision(as.matrix(theta.true.fix!=0), gg$icov[[1]]!=0)
+# 0.8
+
+# Better precision for ECM GHS than the graphical lasso!
 
 
 
@@ -128,6 +136,18 @@ theta.est.fix2[1:5,1:5]
 #[4,] 0.0000000 0.0000000 0.2154476 1.0000000 0.0000000
 #[5,] 0.0000000 0.0000000 0.1886733 0.0000000 1.0000000
 
+# Notably, we need a larger tau in ECMGHS than MCMC GHS. 
+
+# Compare to the graphical lasso by forcing it to the same sparsity as the ECM GHS esitmate
+gg = huge(x.sf.fix2,method='glasso', lambda=0.2745)
+gg$sparsity
+# 0.007248322
+tailoredGlasso::precision(as.matrix(theta.true.fix2!=0), gg$icov[[1]]!=0)
+# 0.6419753
+
+# Better precision for ECM GHS than the graphical lasso!
+
+
 # EXAMPLE 3 ------------------------------------------------------------------
 # GENERATE GRAPH with tau fixed: n=300, p=400, smaller partial correlations (0.147)
 
@@ -168,6 +188,15 @@ theta.est.fix3[1:5,1:5]
 #[3,] 0.0000000 0.1400074 1.0000000 0.1752922 0.1859689
 #[4,] 0.0000000 0.0000000 0.1752922 1.0000000 0.0000000
 #[5,] 0.0000000 0.0000000 0.1859689 0.0000000 1.0000000
+
+# Compare to the graphical lasso by forcing it to the same sparsity as the ECM GHS esitmate
+gg = huge(x.sf.fix3,method='glasso', lambda=0.1754)
+gg$sparsity
+# 0.006704261
+tailoredGlasso::precision(as.matrix(theta.true.fix3!=0), gg$icov[[1]]!=0)
+# 0.3850467
+
+# Better precision for ECM GHS than the graphical lasso!
 
 # EXAMPLE 4 ------------------------------------------------------------------
 # GENERATE GRAPH with tau fixed: n=100, p=200, smaller partial correlations (0.18)
@@ -211,7 +240,6 @@ theta.est.fix4[1:5,1:5]
 #[5,]    0 0.0000000 0.2750568 0.000000 1.0000000
 
 # Compare to the graphical lasso by forcing it to the same sparsity as the ECM GHS esitmate
-
 gg = huge(x.sf.fix4,method='glasso', lambda=0.2879)
 gg$sparsity
 # 0.01005025
@@ -219,6 +247,5 @@ tailoredGlasso::precision(as.matrix(theta.true.fix4!=0), gg$icov[[1]]!=0)
 # 0.35
 
 # Better precision for ECM GHS than the graphical lasso!
-
 
 
