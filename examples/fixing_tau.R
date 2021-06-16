@@ -281,7 +281,7 @@ tailoredGlasso::recall(as.matrix(theta.true.fix4!=0), gg$icov[[1]]!=0)
 # Better precision and recall for ECM GHS than the graphical lasso!
 
 # EXAMPLE 5 ------------------------------------------------------------------
-# GENERATE GRAPH with tau fixed: n=200, p=150, larger partial correlations (0.183)
+# GENERATE GRAPH with tau fixed: n=50, p=100, larger partial correlations (0.183)
 
 # Test sensitivity to choice of tau (within same magnitude)
 
