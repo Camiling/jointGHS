@@ -281,9 +281,9 @@ tailoredGlasso::recall(as.matrix(theta.true.fix4!=0), gg$icov[[1]]!=0)
 # Better precision and recall for ECM GHS than the graphical lasso!
 
 # EXAMPLE 5 ------------------------------------------------------------------
-# GENERATE GRAPH with tau fixed: n=50, p=100, larger partial correlations (0.183)
+# GENERATE GRAPH with tau fixed: n=50, p=100, larger partial correlations (0.192)
 
-# Test sensitivity to choice of tau (within same magnitude)
+# Test sensitivity to choice of tau (within same magnitude), with weak signal, much noise
 
 n.fix5=50
 p.fix5=100
@@ -365,4 +365,67 @@ theta.est.fix5.3[1:5,1:5]
 
 # As we see, if tau is of the same magntitude then the results are not too sensitive to the exact value - no significant problems arise. 
 
+# EXAMPLE 6 ------------------------------------------------------------------
+# GENERATE GRAPH with tau fixed: n=500, p=100, larger partial correlations (0.183)
 
+# Test sensitivity to choice of tau (within same magnitude), with strong signal, small noise
+n.fix6=500
+p.fix6=100
+set.seed(12345)
+data.sf.fix6 = huge::huge.generator(n=n.fix6, d=p.fix6,graph = 'scale-free',v=0.5,u=0.05) 
+g.true.sf.fix6 = data.sf.fix6$theta # True adjacency matrix
+theta.true.fix6 = data.sf.fix6$omega # The precision matrix
+theta.true.fix6[which(theta.true.fix6<10e-5,arr.ind=T)]=0  
+g.sf.fix6=graph.adjacency(data.sf.fix6$theta,mode="undirected",diag=F) # true igraph object
+x.sf.fix6 = data.sf.fix6$data # Observed attributes. nxp matrix.
+x.sf.scaled.fix6= scale(x.sf.fix6) # Scale columns/variables.
+s.sf.scaled.fix6 = cov(x.sf.scaled.fix6) # Empirical covariance matrix
+data.sf.fix6$sparsity # True sparsity: 0.02
+# Look at precision matrix (partial correlations)
+cov2cor(theta.true.fix6[1:5,1:5])
+#[,1]      [,2]      [,3]      [,4]      [,5]
+#[1,] 1.0000000 0.1918105 0.0000000 0.0000000 0.0000000
+#[2,] 0.1918105 1.0000000 0.1918105 0.0000000 0.0000000
+#[3,] 0.0000000 0.1918105 1.0000000 0.1918105 0.1918105
+#[4,] 0.0000000 0.0000000 0.1918105 1.0000000 0.0000000
+#[5,] 0.0000000 0.0000000 0.1918105 0.0000000 1.0000000
+
+# First tau
+
+res.fix6 <- fastGHS(x.sf.fix6,tau_sq = 0.7,epsilon = 1e-3, fix_tau=TRUE)
+theta.est.fix6 <- cov2cor(res.fix6$theta)
+theta.est.fix6[which(abs(theta.est.fix6) < 1e-5, arr.ind = T)] = 0
+tailoredGlasso::sparsity(theta.est.fix6!=0)
+# 0.009090909
+tailoredGlasso::precision(as.matrix(theta.true.fix6!=0), theta.est.fix6!=0)
+# 1
+tailoredGlasso::recall(as.matrix(theta.true.fix6!=0), theta.est.fix6!=0)
+# 0.4545455
+theta.est.fix6[1:5,1:5]
+#[,1]      [,2]      [,3]      [,4]      [,5]
+#[1,] 1.0000000 0.2025924 0.0000000 0.0000000 0.0000000
+#[2,] 0.2025924 1.0000000 0.2362132 0.0000000 0.0000000
+#[3,] 0.0000000 0.2362132 1.0000000 0.2270435 0.1941258
+#[4,] 0.0000000 0.0000000 0.2270435 1.0000000 0.0000000
+#[5,] 0.0000000 0.0000000 0.1941258 0.0000000 1.0000000
+
+# Second tau
+
+res.fix6.2 <- fastGHS(x.sf.fix6,tau_sq = 0.1,epsilon = 1e-5, fix_tau=TRUE)
+theta.est.fix6.2 <- cov2cor(res.fix6.2$theta)
+theta.est.fix6.2[which(abs(theta.est.fix6.2) < 1e-5, arr.ind = T)] = 0
+tailoredGlasso::sparsity(theta.est.fix6.2!=0)
+# 0.007474747
+tailoredGlasso::precision(as.matrix(theta.true.fix6!=0), theta.est.fix6.2!=0)
+# 1
+tailoredGlasso::recall(as.matrix(theta.true.fix6!=0), theta.est.fix6.2!=0)
+# 0.3737374
+theta.est.fix6.2[1:5,1:5]
+#[,1]      [,2]      [,3]      [,4]      [,5]
+#[1,] 1.0000000 0.2021462 0.0000000 0.000000 0.0000000
+#[2,] 0.2021462 1.0000000 0.2360934 0.000000 0.0000000
+#[3,] 0.0000000 0.2360934 1.0000000 0.228576 0.1938736
+#[4,] 0.0000000 0.0000000 0.2285760 1.000000 0.0000000
+#[5,] 0.0000000 0.0000000 0.1938736 0.000000 1.0000000
+
+# With this strong signal, the choice of tau is much less important (but larger is better, as more edges are allowed in the estimated graph)
