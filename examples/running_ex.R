@@ -1,5 +1,7 @@
 ## Testing fastGHS
 
+# Note that in these examples, tau is not fixed. 
+
 # ---------------------------------------------
 # Example 1: simple example, compare to the graphical lasso
 

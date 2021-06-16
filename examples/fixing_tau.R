@@ -36,42 +36,19 @@ cov2cor(theta.true.fix[1:5,1:5])
 #[4,] 0.0000000 0.0000000 0.2290578 1.0000000 0.0000000
 #[5,] 0.0000000 0.0000000 0.2290578 0.0000000 1.0000000
 
-# Ordinary GHS
-set.seed(123)
-ghs.res.fix = GHS(t(x.sf.fix)%*%x.sf.fix,n.fix,burnin=100,nmc=1000)
-hist(ghs.res.fix$taus.samples) # Small tau, around size 1e-4
-theta.est.ghs = cov2cor(apply(ghs.res.fix$thetas.sampled, c(1,2), mean))
-theta.est.off.diag.ghs <- theta.est.ghs
-diag(theta.est.off.diag.ghs) <- NA
-# Look at the distribution of the precision matrix elements
-hist(c(theta.est.off.diag.ghs), breaks=100)
-theta.est.ghs[which(abs(theta.est.ghs) < quantile(abs(theta.est.off.diag.ghs), 0.96,na.rm = T), arr.ind = T)] = 0
-quantile(abs(theta.est.off.diag.ghs), 0.96,na.rm = T)
-# 0.05488769 
-mean(ghs.res.fix$taus.samples)
-# 0.0001879007
-tailoredGlasso::sparsity(theta.est.ghs!=0)
-# 0.04
-tailoredGlasso::precision(theta.true.fix!=0,theta.est.ghs!=0)
-# 0.7142857
-
-theta.est.ghs[1:5,1:5]
-#[,1]      [,2]      [,3]      [,4]      [,5]
-#[1,] 1.0000000 0.1403512 0.0000000 0.0000000 0.0000000
-#[2,] 0.1403512 1.0000000 0.2281446 0.0000000 0.0000000
-#[3,] 0.0000000 0.2281446 1.0000000 0.1833029 0.2419605
-#[4,] 0.0000000 0.0000000 0.1833029 1.0000000 0.0000000
-#[5,] 0.0000000 0.0000000 0.2419605 0.0000000 1.0000000
 
 # ECMGHS
-
+system.time(
 res.fix <- fastGHS(x.sf.fix,tau_sq = 0.1,epsilon = 1e-3, fix_tau=TRUE)
+)
 theta.est.fix <- cov2cor(res.fix$theta)
 theta.est.fix[which(abs(theta.est.fix) < 1e-5, arr.ind = T)] = 0
 tailoredGlasso::sparsity(theta.est.fix!=0)
 # 0.01632653
 tailoredGlasso::precision(as.matrix(theta.true.fix!=0), theta.est.fix!=0)
 # 1
+tailoredGlasso::recall(as.matrix(theta.true.fix!=0), theta.est.fix!=0)
+# 0.4081633
 theta.est.fix[1:5,1:5]
 #[,1]      [,2]      [,3]      [,4]      [,5]
 #[1,] 1.0000000 0.1965087 0.0000000 0.0000000 0.0000000
@@ -80,8 +57,49 @@ theta.est.fix[1:5,1:5]
 #[4,] 0.0000000 0.0000000 0.2176918 1.0000000 0.0000000
 #[5,] 0.0000000 0.0000000 0.2528399 0.0000000 1.0000000
 
+# Compare to ordinary GHS, forced to same sparsity to allow for direct comparison
+set.seed(123)
+system.time(
+ghs.res.fix <- GHS(t(x.sf.fix)%*%x.sf.fix,n.fix,burnin=100,nmc=1000)
+)
+hist(ghs.res.fix$taus.samples) # Small tau, around size 1e-4
+theta.est.ghs = cov2cor(apply(ghs.res.fix$thetas.sampled, c(1,2), mean))
+theta.est.off.diag.ghs <- theta.est.ghs
+diag(theta.est.off.diag.ghs) <- NA
+# Look at the distribution of the precision matrix elements: no clear distinguishment between 
+hist(c(theta.est.off.diag.ghs), breaks=100)
+theta.est.ghs[which(abs(theta.est.ghs) < quantile(abs(theta.est.off.diag.ghs),1-tailoredGlasso::sparsity(theta.est.fix!=0),na.rm = T), arr.ind = T)] = 0
+quantile(abs(theta.est.off.diag.ghs),1-tailoredGlasso::sparsity(theta.est.fix!=0),na.rm = T)
+# 98.36735% 
+# 0.1721756 
+mean(ghs.res.fix$taus.samples)
+# 0.0001879007
+tailoredGlasso::sparsity(theta.est.ghs!=0)
+#  0.01632653
+tailoredGlasso::precision(theta.true.fix!=0,theta.est.ghs!=0)
+# 1
+tailoredGlasso::recall(theta.true.fix!=0,theta.est.ghs!=0)
+# 0.4081633
+theta.est.ghs[1:5,1:5]
+#[,1]      [,2]      [,3]      [,4]      [,5]
+#     [,1]      [,2]      [,3]      [,4]      [,5]
+#[1,]    1 0.0000000 0.0000000 0.0000000 0.0000000
+#[2,]    0 1.0000000 0.2281446 0.0000000 0.0000000
+#[3,]    0 0.2281446 1.0000000 0.1833029 0.2419605
+#[4,]    0 0.0000000 0.1833029 1.0000000 0.0000000
+#[5,]    0 0.0000000 0.2419605 0.0000000 1.0000000
+
+# We get the same precision and recall with the methods. 
+
+# We also see that ECMGHS is almost 100 times faster than the MCMC approach. 
 
 # Notably, we need a larger tau in ECMGHS than MCMC GHS. 
+
+# Look at their edge agreement
+tailoredGlasso::confusion.matrix(theta.est.fix!=0,theta.est.ghs!=0)
+#     [,1] [,2]
+#[1,]   16    4
+#[2,]    4 1201
 
 # Compare to the graphical lasso by forcing it to the same sparsity as the ECM GHS esitmate
 gg = huge(x.sf.fix,method='glasso', lambda=0.465)
@@ -89,8 +107,10 @@ gg$sparsity
 # 0.01632653
 tailoredGlasso::precision(as.matrix(theta.true.fix!=0), gg$icov[[1]]!=0)
 # 0.8
+tailoredGlasso::recall(as.matrix(theta.true.fix!=0), gg$icov[[1]]!=0)
+# 0.3265306
 
-# Better precision for ECM GHS than the graphical lasso!
+# Better precision and recall for ECM GHS than the graphical lasso!
 
 
 
@@ -128,6 +148,8 @@ tailoredGlasso::sparsity(theta.est.fix2!=0)
 # 0.007248322
 tailoredGlasso::precision(as.matrix(theta.true.fix2!=0), theta.est.fix2!=0)
 # 0.9012346
+tailoredGlasso::recall(as.matrix(theta.true.fix2!=0), theta.est.fix2!=0)
+# 0.4899329
 theta.est.fix2[1:5,1:5]
 #[,1]      [,2]      [,3]      [,4]      [,5]
 #[1,] 1.0000000 0.1918803 0.0000000 0.0000000 0.0000000
@@ -144,8 +166,10 @@ gg$sparsity
 # 0.007248322
 tailoredGlasso::precision(as.matrix(theta.true.fix2!=0), gg$icov[[1]]!=0)
 # 0.6419753
+tailoredGlasso::recall(as.matrix(theta.true.fix2!=0), gg$icov[[1]]!=0)
+# 0.3489933
 
-# Better precision for ECM GHS than the graphical lasso!
+# Better precision and recall for ECM GHS than the graphical lasso!
 
 
 # EXAMPLE 3 ------------------------------------------------------------------
@@ -181,6 +205,8 @@ tailoredGlasso::sparsity(theta.est.fix3!=0)
 # 0.006704261
 tailoredGlasso::precision(as.matrix(theta.true.fix3!=0), theta.est.fix3!=0)
 # 0.4168224
+tailoredGlasso::recall(as.matrix(theta.true.fix3!=0), theta.est.fix3!=0)
+# 0.5588972
 theta.est.fix3[1:5,1:5]
 #          [,1]      [,2]      [,3]      [,4]      [,5]
 #[1,] 1.0000000 0.1901565 0.0000000 0.0000000 0.0000000
@@ -195,8 +221,10 @@ gg$sparsity
 # 0.006704261
 tailoredGlasso::precision(as.matrix(theta.true.fix3!=0), gg$icov[[1]]!=0)
 # 0.3850467
+tailoredGlasso::recall(as.matrix(theta.true.fix3!=0), gg$icov[[1]]!=0)
+# 0.5162907
 
-# Better precision for ECM GHS than the graphical lasso!
+# Better precision and recall for ECM GHS than the graphical lasso!
 
 # EXAMPLE 4 ------------------------------------------------------------------
 # GENERATE GRAPH with tau fixed: n=100, p=200, smaller partial correlations (0.18)
@@ -231,6 +259,8 @@ tailoredGlasso::sparsity(theta.est.fix4!=0)
 # 0.01005025
 tailoredGlasso::precision(as.matrix(theta.true.fix4!=0), theta.est.fix4!=0)
 # 0.355
+tailoredGlasso::recall(as.matrix(theta.true.fix4!=0), theta.est.fix4!=0)
+# 0.3567839
 theta.est.fix4[1:5,1:5]
 #     [,1]      [,2]      [,3]      [,4]      [,5]
 #[1,]    1 0.0000000 0.0000000 0.000000 0.0000000
@@ -245,7 +275,94 @@ gg$sparsity
 # 0.01005025
 tailoredGlasso::precision(as.matrix(theta.true.fix4!=0), gg$icov[[1]]!=0)
 # 0.35
+tailoredGlasso::recall(as.matrix(theta.true.fix4!=0), gg$icov[[1]]!=0)
+# 0.3517588
 
-# Better precision for ECM GHS than the graphical lasso!
+# Better precision and recall for ECM GHS than the graphical lasso!
+
+# EXAMPLE 2 ------------------------------------------------------------------
+# GENERATE GRAPH with tau fixed: n=200, p=150, larger partial correlations (0.183)
+
+# Test sensitivity to choice of tau (within same magnitude)
+
+n.fix5=50
+p.fix5=100
+set.seed(12345)
+data.sf.fix5 = huge::huge.generator(n=n.fix5, d=p.fix5,graph = 'scale-free',v=0.5,u=0.05) 
+g.true.sf.fix5 = data.sf.fix5$theta # True adjacency matrix
+theta.true.fix5 = data.sf.fix5$omega # The precision matrix
+theta.true.fix5[which(theta.true.fix5<10e-5,arr.ind=T)]=0  
+g.sf.fix5=graph.adjacency(data.sf.fix5$theta,mode="undirected",diag=F) # true igraph object
+x.sf.fix5 = data.sf.fix5$data # Observed attributes. nxp matrix.
+x.sf.scaled.fix5= scale(x.sf.fix5) # Scale columns/variables.
+s.sf.scaled.fix5 = cov(x.sf.scaled.fix5) # Empirical covariance matrix
+data.sf.fix5$sparsity # True sparsity: 0.02
+# Look at precision matrix (partial correlations)
+cov2cor(theta.true.fix5[1:5,1:5])
+#[,1]      [,2]      [,3]      [,4]      [,5]
+#[1,] 1.0000000 0.1918105 0.0000000 0.0000000 0.0000000
+#[2,] 0.1918105 1.0000000 0.1918105 0.0000000 0.0000000
+#[3,] 0.0000000 0.1918105 1.0000000 0.1918105 0.1918105
+#[4,] 0.0000000 0.0000000 0.1918105 1.0000000 0.0000000
+#[5,] 0.0000000 0.0000000 0.1918105 0.0000000 1.0000000
+
+# First tau
+
+res.fix5 <- fastGHS(x.sf.fix5,tau_sq = 0.1,epsilon = 1e-3, fix_tau=TRUE)
+theta.est.fix5 <- cov2cor(res.fix5$theta)
+theta.est.fix5[which(abs(theta.est.fix5) < 1e-5, arr.ind = T)] = 0
+tailoredGlasso::sparsity(theta.est.fix5!=0)
+# 0.0240404
+tailoredGlasso::precision(as.matrix(theta.true.fix5!=0), theta.est.fix5!=0)
+# 0.2521008
+tailoredGlasso::recall(as.matrix(theta.true.fix5!=0), theta.est.fix5!=0)
+# 0.3030303
+theta.est.fix5[1:5,1:5]
+#[,1]      [,2]      [,3]      [,4]      [,5]
+#[1,]    1 0.0000000 0.0000000  0.0000000  0.0000000
+#[2,]    0 1.0000000 0.2624593  0.0000000  0.0000000
+#[3,]    0 0.2624593 1.0000000  0.2510143  0.0000000
+#[4,]    0 0.0000000 0.2510143  1.0000000 -0.3653482
+#[5,]    0 0.0000000 0.0000000 -0.3653482  1.0000000
+
+# Second tau
+
+res.fix5.2 <- fastGHS(x.sf.fix5,tau_sq = 0.075,epsilon = 1e-3, fix_tau=TRUE)
+theta.est.fix5.2 <- cov2cor(res.fix5.2$theta)
+theta.est.fix5.2[which(abs(theta.est.fix5.2) < 1e-5, arr.ind = T)] = 0
+tailoredGlasso::sparsity(theta.est.fix5.2!=0)
+# 0.02080808
+tailoredGlasso::precision(as.matrix(theta.true.fix5!=0), theta.est.fix5.2!=0)
+# 0.2621359
+tailoredGlasso::recall(as.matrix(theta.true.fix5!=0), theta.est.fix5.2!=0)
+# 0.2727273
+theta.est.fix5.2[1:5,1:5]
+#[,1]      [,2]      [,3]      [,4]      [,5]
+#[1,]    1 0.0000000 0.0000000  0.0000000  0.000000
+#[2,]    0 1.0000000 0.2757929  0.0000000  0.000000
+#[3,]    0 0.2757929 1.0000000  0.2503962  0.000000
+#[4,]    0 0.0000000 0.2503962  1.0000000 -0.365899
+#[5,]    0 0.0000000 0.0000000 -0.3658990  1.000000
+
+# Third tau
+
+res.fix5.3 <- fastGHS(x.sf.fix5,tau_sq = 0.125,epsilon = 1e-3, fix_tau=TRUE)
+theta.est.fix5.3 <- cov2cor(res.fix5.3$theta)
+theta.est.fix5.3[which(abs(theta.est.fix5.3) < 1e-5, arr.ind = T)] = 0
+tailoredGlasso::sparsity(theta.est.fix5.3!=0)
+# 0.02828283
+tailoredGlasso::precision(as.matrix(theta.true.fix5!=0), theta.est.fix5.3!=0)
+# 0.2214286
+tailoredGlasso::recall(as.matrix(theta.true.fix5!=0), theta.est.fix5.3!=0)
+# 0.3131313
+theta.est.fix5.3[1:5,1:5]
+#[,1]      [,2]      [,3]      [,4]      [,5]
+#[1,]    1 0.0000000 0.0000000  0.0000000  0.0000000
+#[2,]    0 1.0000000 0.2640438  0.0000000  0.0000000
+#[3,]    0 0.2640438 1.0000000  0.2569376  0.0000000
+#[4,]    0 0.0000000 0.2569376  1.0000000 -0.3453257
+#[5,]    0 0.0000000 0.0000000 -0.3453257  1.0000000
+
+# As we see, if tau is of the same magntitude then the results are not too sensitive to the exact value - no significant problems arise. 
 
 
