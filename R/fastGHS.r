@@ -15,12 +15,26 @@
 #' @param group grouping information, if variables are grouped. If provided, a vector of length \eqn{p} giving the group of each variable as a string, character or number. 
 #' @param save_Q should the value of the objective function at each step be saved?
 #' @param fix_tau logical. Should tau be fixed?
+#' @param GHS_like logical. Should the GHS-like penalty be used?
 #' @param stop_underflow should underflow be avoided by never allowing doubles to be smaller than the machine precision?
 #' @return a fitted EMGS object
 #' @export 
 #' 
-fastGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, method= 'ECM',epsilon = 1e-5, maxitr = 1e5, verbose=TRUE, savepath = FALSE,  group=NULL, save_Q = F, fix_tau = FALSE, stop_underflow = FALSE){
+fastGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, method= 'ECM',epsilon = 1e-5, maxitr = 1e5, verbose=TRUE, savepath = FALSE,  group=NULL, save_Q = F, fix_tau = FALSE, GHS_like = FALSE, stop_underflow = FALSE){
 
+  # It the GHS-like penalty is used, tau_sq represents the fixed shrinkage parameter 'a' and N is the matrix of nu_ij's
+  
+  if(GHS_like){
+    fix_tau = TRUE # a is not to be updated
+    group = NULL # Groups are not implemented for GHS-like penalty
+    use_ICM = FALSE
+    save_Q = FALSE
+    # random starting point
+    theta = matrix(runif(ncol(X)^2,0,0.3),nrow=ncol(X))
+    diag(theta) = 1
+    theta = as.matrix(Matrix::nearPD(theta)$mat)
+  }
+  
   p <- dim(X)[2]
   
   # Assign initial values, unless provided
@@ -61,8 +75,12 @@ fastGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, meth
   }
 
   n <- dim(X)[1]
-  S <- t(X) %*% X
-
+  if(GHS_like){
+    S <- t(X) %*% X / dim(X)[1]
+  }
+  else{
+    S <- t(X) %*% X
+  }
   # Check if vars should be grouped
   if(is.null(group)){
     group <- rep(0, dim(X)[2])
@@ -108,10 +126,10 @@ fastGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, meth
   }
   machine_eps = .Machine$double.eps
   if(method=='ECM'){
-    out <- ECM_GHS(as.matrix(X), S, theta , sigma, Lambda_sq, epsilon, verbose, maxitr, savepath, exist.group, group, N_groups, save_Q,tau_sq, Tau_sq, machine_eps, use_ICM = FALSE, fix_tau = fix_tau, stop_underflow=stop_underflow)
+    out <- ECM_GHS(as.matrix(X), S, theta , sigma, Lambda_sq, epsilon, verbose, maxitr, savepath, exist.group, group, N_groups, save_Q,tau_sq, Tau_sq, machine_eps, use_ICM = FALSE, fix_tau = fix_tau, GHS_like = GHS_like, stop_underflow=stop_underflow)
   }
   else if(method=='ICM'){
-    out <- ECM_GHS(as.matrix(X), S, theta , sigma, Lambda_sq, epsilon, verbose, maxitr, savepath, exist.group, group, N_groups, save_Q,tau_sq, Tau_sq, machine_eps, use_ICM = TRUE, fix_tau = fix_tau, stop_underflow=stop_underflow)
+    out <- ECM_GHS(as.matrix(X), S, theta , sigma, Lambda_sq, epsilon, verbose, maxitr, savepath, exist.group, group, N_groups, save_Q,tau_sq, Tau_sq, machine_eps, use_ICM = TRUE, fix_tau = fix_tau, GHS_like = GHS_like, stop_underflow=stop_underflow)
   }
   else {
     out <- NULL
@@ -121,7 +139,6 @@ fastGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, meth
   out$epsilon = epsilon
   out$maxitr = maxitr
   out$group = group
-  
   class(out) = "fastGHS"
   return(out)
 }
