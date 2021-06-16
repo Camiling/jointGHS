@@ -98,7 +98,7 @@ List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::m
     }
     else{
       // For the GHS-like prior, we update the matrix Nu of latent shrinkage parameters
-      E_Nu_mat = E_Nu_GHSlike(tau_sq, theta);
+      E_Nu_mat = 1/E_Nu_GHSlike(tau_sq, theta);
     }
     
     // The updates below are only relevant for standard GHS
@@ -139,6 +139,7 @@ List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::m
       // For the GHS-like prior, we update theta only in the M-step
       else {
         // Use trick to reuse code: 
+        
         theta_sigma_update = M_theta(N, M, theta, S, sigma, E_Nu_mat, pseq, exist_group, group, S,machine_eps, stop_underflow, tau_sq/2); // Pass S as dummy argument
       }
     }

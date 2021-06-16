@@ -44,7 +44,7 @@ theta.est.test[1:5,1:5]
 
 # GHS-like prior
 
-res.test.ghslike <- fastGHS(x.sf.test,tau_sq = 0.01,epsilon = 1e-3, GHS_like=TRUE) # Now a is tau_sq
+res.test.ghslike <- fastGHS(x.sf.test,tau_sq = 0.9,epsilon = 1e-3, GHS_like=TRUE) # Now a is tau_sq
 theta.est.test.ghslike <- cov2cor(res.test.ghslike$theta)
 theta.est.test.ghslike[which(abs(theta.est.test.ghslike) < 1e-5, arr.ind = T)] = 0
 tailoredGlasso::sparsity(theta.est.test.ghslike!=0)
@@ -52,8 +52,8 @@ tailoredGlasso::sparsity(theta.est.test.ghslike!=0)
 tailoredGlasso::precision(as.matrix(theta.true.test!=0), theta.est.test.ghslike!=0)
 # 1
 tailoredGlasso::recall(as.matrix(theta.true.test!=0), theta.est.test.ghslike!=0)
-# 0.4081633
-theta.est.test[1:5,1:5]
+# 0
+theta.est.test.ghslike[1:5,1:5]
 
 
 
