@@ -7,7 +7,7 @@ using namespace std;
 using namespace arma;
 using namespace Rcpp;
 
-cube M_theta(int N, int M, mat theta, mat &S, mat sigma, mat &Lambda_sq, uvec pseq, int exist_group, uvec &group, mat Tau_sq, double machine_eps,bool stop_underflow, double tau_sq) {
+cube M_theta(int N, int M, mat theta, mat &S, mat sigma, mat &Lambda_sq, uvec pseq, int exist_group, uvec &group, mat Tau_sq, double machine_eps,bool stop_underflow, double tau_sq, bool GHS_like) {
   
   // Return a MxMx2 cube with theta and sigma
   cube res(M,M,2);
@@ -52,7 +52,13 @@ cube M_theta(int N, int M, mat theta, mat &S, mat sigma, mat &Lambda_sq, uvec ps
     // Find inverse of theta submatrix
     theta_mi_mi_Inv = sigma_mi_mi - sigma_i_mi*sigma_i_mi.t()/sigma_i_i(0,0);
     
-    Lambda_diag.diag() = 1/Lambda_sq_i_mi;
+    if(GHS_like==true){
+      Lambda_diag.diag() = Lambda_sq_i_mi;
+    }
+    else {
+      Lambda_diag.diag() = 1/Lambda_sq_i_mi;
+    }
+    
     
     if (exist_group){
       // Find Tau matrix of all group combinations. 

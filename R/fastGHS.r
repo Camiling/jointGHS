@@ -30,9 +30,10 @@ fastGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, meth
     use_ICM = FALSE
     save_Q = FALSE
     # random starting point
-    theta = matrix(runif(ncol(X)^2,0,0.3),nrow=ncol(X))
+    theta = matrix(runif(ncol(X)^2,1e-3,0.3),nrow=ncol(X))
     diag(theta) = 1
     theta = as.matrix(Matrix::nearPD(theta)$mat)
+    sigma = as.matrix(Matrix::nearPD(solve(theta))$mat)
   }
   
   p <- dim(X)[2]
@@ -59,7 +60,7 @@ fastGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, meth
       sigma=as.matrix(Matrix::forceSymmetric(sigma))
       cat('Initial sigma not symmetric, forcing symmetry...\n')
     }
-    if(ncol(sigma)!= p | nrow(sigma)!=p | !matrixcalc::is.positive.definite(sigma+0)){
+    if(ncol(sigma)!= p | nrow(sigma)!=p | !matrixcalc::is.positive.definite(as.matrix(sigma+0))){
       cat('Error: initial sigma must be pxp and positive definite \n')
       return()
     } 
@@ -76,7 +77,7 @@ fastGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, meth
 
   n <- dim(X)[1]
   if(GHS_like){
-    S <- t(X) %*% X / dim(X)[1]
+    S <- (t(X) %*% X)/ n
   }
   else{
     S <- t(X) %*% X
