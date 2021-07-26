@@ -26,9 +26,12 @@ cube M_theta(int N, int M, mat theta, mat &S, mat sigma, mat &Lambda_sq, uvec ps
   mat S_i_i(1,1); // element from partioned sample matrix
   mat Lambda_sq_i_mi(M-1, 1); // Vector from partioned Lambda_sq matrix
   mat Tau_sq_i_mi(M-1,1); // Vector of tau_sq values of partition. Not used if varibles are not grouped. 
+  double tau_sq_log = log(tau_sq);
+  mat max_vec = zeros<mat>(M-1, M-1);
   
   // Diagonal matrices
-  mat Lambda_diag = zeros<mat>(M-1,M-1);
+  mat Lambda_diag_log = zeros<mat>(M-1,M-1);
+  //mat Lambda_diag = zeros<mat>(M-1,M-1);
   mat Tau_diag = zeros<mat>(M-1,M-1);
   
   // Some additional quantities
@@ -53,23 +56,27 @@ cube M_theta(int N, int M, mat theta, mat &S, mat sigma, mat &Lambda_sq, uvec ps
     theta_mi_mi_Inv = sigma_mi_mi - sigma_i_mi*sigma_i_mi.t()/sigma_i_i(0,0);
     
     if(GHS_like==true){
-      Lambda_diag.diag() = Lambda_sq_i_mi;
+      Lambda_diag_log.diag() = log(Lambda_sq_i_mi);
     }
     else {
-      Lambda_diag.diag() = 1/Lambda_sq_i_mi;
+      Lambda_diag_log.diag() = -log(Lambda_sq_i_mi); // log of 1/Lambda_sq_i_mi
     }
     
     
     if (exist_group){
       // Find Tau matrix of all group combinations. 
       Tau_diag.diag() = 1/Tau_G.submat(remove_i,left_i);
-      theta_i_mi = -inv(S_i_i(0,0)*theta_mi_mi_Inv + Lambda_diag*Tau_diag)*S_i_mi;
+      theta_i_mi = -inv(S_i_i(0,0)*theta_mi_mi_Inv + exp(Lambda_diag_log)*Tau_diag)*S_i_mi;
     }else {
-      theta_i_mi = -inv(S_i_i(0,0)*theta_mi_mi_Inv + Lambda_diag/tau_sq)*S_i_mi;
+      for (j = 0; j < M-1; j++){
+        max_vec(j,j) = max(Lambda_diag_log(j,j), tau_sq_log); 
+      }
+      Lambda_diag_log.diag() = exp(Lambda_diag_log.diag()-max_vec.diag())/exp(tau_sq_log-max_vec.diag()); // Use this 
+      theta_i_mi = -inv(S_i_i(0,0)*theta_mi_mi_Inv + Lambda_diag_log)*S_i_mi;
     }
     
     theta_i_i = theta_i_mi.t()*theta_mi_mi_Inv*theta_i_mi + M/S_i_i(0,0);
-    
+     
     // Avoid computing these quantities multiple times
     theta_prod_vec = theta_mi_mi_Inv*theta_i_mi;
     theta_prod_val = theta_i_i - theta_i_mi.t()*theta_prod_vec;

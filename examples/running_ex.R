@@ -1,5 +1,7 @@
 ## Testing fastGHS
 
+# The first simple running example
+
 # Note that in these examples, tau is not fixed. 
 
 # ---------------------------------------------

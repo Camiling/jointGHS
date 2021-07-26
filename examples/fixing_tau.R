@@ -6,6 +6,8 @@ source('GHS.R')
 
 ## See how we can get the correct magnitude of precision matrix elements by fixing tau
 
+# We also test how initialisations and choice of tau affect the resulting estimate. 
+
 # Note that now thresholding is not an issue: we either get precision matrix elements of the correct magnitude (0.1-0.2), 
 # or almost zero (<1e-5) => easy to threshold and perform variable selection. MCMC GHS does not have the same property. 
 
@@ -429,3 +431,102 @@ theta.est.fix6.2[1:5,1:5]
 #[5,] 0.0000000 0.0000000 0.1938736 0.000000 1.0000000
 
 # With this strong signal, the choice of tau is much less important (but larger is better, as more edges are allowed in the estimated graph)
+
+
+
+# EXAMPLE 5 ------------------------------------------------------------------
+# GENERATE GRAPH with tau fixed: n=50, p=100, larger partial correlations (0.192)
+
+# Test sensitivity to initialisation
+
+n.fix7=100
+p.fix7=150
+set.seed(12345)
+data.sf.fix7 = huge::huge.generator(n=n.fix7, d=p.fix7,graph = 'scale-free',v=0.5,u=0.05) 
+g.true.sf.fix7 = data.sf.fix7$theta # True adjacency matrix
+theta.true.fix7 = data.sf.fix7$omega # The precision matrix
+theta.true.fix7[which(theta.true.fix7<10e-5,arr.ind=T)]=0  
+g.sf.fix7=huge::graph.adjacency(data.sf.fix7$theta,mode="undirected",diag=F) # true igraph object
+x.sf.fix7 = data.sf.fix7$data # Observed attributes. nxp matrix.
+x.sf.scaled.fix7= scale(x.sf.fix7) # Scale columns/variables.
+s.sf.scaled.fix7 = cov(x.sf.scaled.fix7) # Empirical covariance matrix
+data.sf.fix7$sparsity # True sparsity: 0.01333
+# Look at precision matrix (partial correlations)
+cov2cor(theta.true.fix7[1:5,1:5])
+#[,1]      [,2]      [,3]      [,4]      [,5]
+#[1,] 1.0000000 0.1826553 0.0000000 0.0000000 0.0000000
+#[2,] 0.1826553 1.0000000 0.1826553 0.0000000 0.0000000
+#[3,] 0.0000000 0.1826553 1.0000000 0.1826553 0.1826553
+#[4,] 0.0000000 0.0000000 0.1826553 1.0000000 0.0000000
+#[5,] 0.0000000 0.0000000 0.1826553 0.0000000 1.0000000
+
+# First initialisation (none)
+
+res.fix7 <- fastGHS(x.sf.fix7,tau_sq = 0.05,epsilon = 1e-3, fix_tau=TRUE)
+theta.est.fix7 <- cov2cor(res.fix7$theta)
+theta.est.fix7[which(abs(theta.est.fix7) < 1e-5, arr.ind = T)] = 0
+tailoredGlasso::sparsity(theta.est.fix7!=0)
+# 0.01243848
+tailoredGlasso::precision(as.matrix(theta.true.fix7!=0), theta.est.fix7!=0)
+# 0.3597122
+tailoredGlasso::recall(as.matrix(theta.true.fix7!=0), theta.est.fix7!=0)
+# 0.3355705
+theta.est.fix7[1:5,1:5]
+#[,1]      [,2]      [,3]      [,4]      [,5]
+#[1,] 1.0000000  0.2388029 0.0000000 0.0000000  0.0000000
+#[2,] 0.2388029  1.0000000 0.1785712 0.0000000 -0.2205877
+#[3,] 0.0000000  0.1785712 1.0000000 0.2034902  0.0000000
+#[4,] 0.0000000  0.0000000 0.2034902 1.0000000  0.0000000
+#[5,] 0.0000000 -0.2205877 0.0000000 0.0000000  1.0000000
+
+# Second initialisation (random)
+
+theta_init = matrix(runif(p.fix7^2,0,0.2),nrow=p.fix7)
+diag(theta_init) = 1
+theta_init = as.matrix(Matrix::nearPD(theta_init)$mat)
+res.fix7.2 <- fastGHS(x.sf.fix7,theta=theta_init,tau_sq = 0.05,epsilon = 1e-3, fix_tau=TRUE)
+theta.est.fix7.2 <- cov2cor(res.fix7.2$theta)
+theta.est.fix7.2[which(abs(theta.est.fix7.2) < 1e-5, arr.ind = T)] = 0
+tailoredGlasso::sparsity(theta.est.fix7.2!=0)
+# 0.01279642
+tailoredGlasso::precision(as.matrix(theta.true.fix7!=0), theta.est.fix7.2!=0)
+# 0.3566434
+tailoredGlasso::recall(as.matrix(theta.true.fix7!=0), theta.est.fix7.2!=0)
+# 0.3422819
+theta.est.fix7.2[1:5,1:5]
+#[,1]      [,2]      [,3]      [,4]      [,5]
+#[1,] 1.0000000  0.2388139 0.0000000 0.0000000  0.0000000
+#[2,] 0.2388139  1.0000000 0.1786496 0.0000000 -0.2206028
+#[3,] 0.0000000  0.1786496 1.0000000 0.2034793  0.0000000
+#[4,] 0.0000000  0.0000000 0.2034793 1.0000000  0.0000000
+#[5,] 0.0000000 -0.2206028 0.0000000 0.0000000  1.0000000
+
+# Very similar results as to those with no initialisation!
+
+
+# Third initialisation (random)
+
+theta_init = matrix(runif(p.fix7^2,0,0.1),nrow=p.fix7)
+diag(theta_init) = 1
+theta_init = as.matrix(Matrix::nearPD(theta_init)$mat)
+res.fix7.3 <- fastGHS(x.sf.fix7,theta=theta_init,tau_sq = 0.05,epsilon = 1e-3, fix_tau=TRUE)
+theta.est.fix7.3 <- cov2cor(res.fix7.3$theta)
+theta.est.fix7.3[which(abs(theta.est.fix7.3) < 1e-5, arr.ind = T)] = 0
+tailoredGlasso::sparsity(theta.est.fix7.3!=0)
+# 0.01261745
+tailoredGlasso::precision(as.matrix(theta.true.fix7!=0), theta.est.fix7.3!=0)
+# 0.3687943
+tailoredGlasso::recall(as.matrix(theta.true.fix7!=0), theta.est.fix7.3!=0)
+# 0.3489933
+theta.est.fix7.3[1:5,1:5]
+#[,1]      [,2]      [,3]      [,4]      [,5]
+#[1,]    1 0.0000000 0.0000000  0.0000000  0.0000000
+#[2,]    0 1.0000000 0.2640438  0.0000000  0.0000000
+#[3,]    0 0.2640438 1.0000000  0.2569376  0.0000000
+#[4,]    0 0.0000000 0.2569376  1.0000000 -0.3453257
+#[5,]    0 0.0000000 0.0000000 -0.3453257  1.0000000
+
+# Very similar resultsto the others, only a bit better. 
+# Sparsity is preserved in all cases.
+
+

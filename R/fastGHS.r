@@ -43,6 +43,7 @@ fastGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, meth
     theta <- diag(1,p)
   }
   else{
+    theta=as.matrix(theta)
     if(!isSymmetric(theta)){
       theta=as.matrix(Matrix::forceSymmetric(theta))
       cat('Initial theta not symmetric, forcing symmetry...')

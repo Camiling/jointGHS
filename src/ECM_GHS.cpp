@@ -169,7 +169,13 @@ List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::m
     if (use_ICM || save_Q) {
       Q_val_old = Q_val_new;
     } 
-    eps = max(max(abs(theta_update - theta)));
+    if (GHS_like == false){
+      eps = max(max(abs(theta_update - theta)));
+    }
+    else{
+      eps = sqrt( ( sum(sum(pow((theta_update - theta),2))) ) );
+    }
+    
     theta = theta_update;
     count++;
     if(verbose){

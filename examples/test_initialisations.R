@@ -1,6 +1,8 @@
 
 # Test different initialisations for fastGHS
 
+# Not the most recent, as we do not ECMGHS select the sparsity itself here. See fixing_tau
+
 # Initialise with the graphical lasso ---------------------
 
 library(fastGHS)
@@ -406,4 +408,4 @@ theta.est.t2[1:5,1:5]
 
 # A bit better as we do not get extreme underflow, as same precision. 
 
-
+# Note that in the above examples, we force too many edges to be included: the method decides the sparsity itself, and so a simple thresholding rule is sufficient
