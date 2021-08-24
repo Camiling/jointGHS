@@ -26,7 +26,6 @@ cube M_theta(int N, int M, mat theta, mat &S, mat sigma, mat &Lambda_sq, uvec ps
   mat S_i_i(1,1); // element from partioned sample matrix
   mat Lambda_sq_i_mi(M-1, 1); // Vector from partioned Lambda_sq matrix
   mat Tau_sq_i_mi(M-1,1); // Vector of tau_sq values of partition. Not used if varibles are not grouped. 
-  double tau_sq_log = log(tau_sq);
   
   // Diagonal matrices
   mat Lambda_diag  = zeros<mat>(M-1,M-1);
