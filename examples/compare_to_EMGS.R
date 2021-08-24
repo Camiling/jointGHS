@@ -6,7 +6,9 @@ library(huge)
 library(network)
 library(GGally)
 
-# First simple example
+# Compare ECM GHS to EMGS (ECM for SSL)
+
+# Not able to download package
 
 set.seed(2020)
 g <- huge.generator(n=50,d=100,graph = 'scale-free')
