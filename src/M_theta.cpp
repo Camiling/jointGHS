@@ -29,7 +29,7 @@ cube M_theta(int N, int M, mat theta, mat &S, mat sigma, mat &Lambda_sq, uvec ps
   
   // Diagonal matrices
   mat Lambda_diag  = zeros<mat>(M-1,M-1);
-  //mat Lambda_diag = zeros<mat>(M-1,M-1);
+ 
   mat Tau_diag = zeros<mat>(M-1,M-1);
   
   // Some additional quantities
