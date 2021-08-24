@@ -64,7 +64,7 @@ cube M_theta(int N, int M, mat theta, mat &S, mat sigma, mat &Lambda_sq, uvec ps
     if (exist_group){
       // Find Tau matrix of all group combinations. 
       Tau_diag.diag() = 1/Tau_G.submat(remove_i,left_i);
-      theta_i_mi = -inv(S_i_i(0,0)*theta_mi_mi_Inv + exp(Lambda_diag_log)*Tau_diag)*S_i_mi;
+      theta_i_mi = -inv(S_i_i(0,0)*theta_mi_mi_Inv + Lambda_diag*Tau_diag)*S_i_mi;
     }else {
       theta_i_mi = -inv(S_i_i(0,0)*theta_mi_mi_Inv + Lambda_diag/tau_sq)*S_i_mi;
     }
