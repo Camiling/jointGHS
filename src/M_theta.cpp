@@ -54,10 +54,10 @@ cube M_theta(int N, int M, mat theta, mat &S, mat sigma, mat &Lambda_sq, uvec ps
     theta_mi_mi_Inv = sigma_mi_mi - sigma_i_mi*sigma_i_mi.t()/sigma_i_i(0,0);
     
     if(GHS_like==true){
-      Lambda_diag_log.diag() = log(Lambda_sq_i_mi);
+      Lambda_diag.diag() = Lambda_sq_i_mi;
     }
     else {
-      Lambda_diag_log.diag() = -log(Lambda_sq_i_mi); // log of 1/Lambda_sq_i_mi
+      Lambda_diag.diag() = 1/Lambda_sq_i_mi;
     }
     
     
