@@ -30,7 +30,7 @@ cube M_theta(int N, int M, mat theta, mat &S, mat sigma, mat &Lambda_sq, uvec ps
   mat max_vec = zeros<mat>(M-1, M-1);
   
   // Diagonal matrices
-  mat Lambda_diag_log = zeros<mat>(M-1,M-1);
+  mat Lambda_diag  = zeros<mat>(M-1,M-1);
   //mat Lambda_diag = zeros<mat>(M-1,M-1);
   mat Tau_diag = zeros<mat>(M-1,M-1);
   
