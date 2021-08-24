@@ -9,6 +9,7 @@
 #include "M_tau.h"
 #include "M_tau_group.h"
 #include "E_Nu.h"
+#include "E_Nu_GHSlike.h"
 #include "M_lambda.h"
 
 #include "Q_val.h"
@@ -46,7 +47,7 @@ using namespace arma;
 //' 
 //' @export
 // [[Rcpp::export]]
-List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::mat Lambda_sq, double epsilon, bool verbose, int maxitr, bool savepath, int exist_group, arma::uvec group, arma::mat N_groups, bool save_Q, double tau_sq, arma::mat Tau_sq, double machine_eps, bool use_ICM=false, bool fix_tau = false, bool stop_underflow=false) {
+List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::mat Lambda_sq, double epsilon, bool verbose, int maxitr, bool savepath, int exist_group, arma::uvec group, arma::mat N_groups, bool save_Q, double tau_sq, arma::mat Tau_sq, double machine_eps, bool use_ICM=false, bool fix_tau = false, bool GHS_like = false, bool stop_underflow=false) {
 
   // get dimensions
   const int M = X.n_cols;
@@ -75,6 +76,7 @@ List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::m
   
   // Initialise updates
  arma::mat theta_update = theta; // Save previous estimate to assess convergence
+ arma::mat E_Nu_mat(M,M);
  arma::mat E_NuInv(M,M);
  arma::mat E_XiInv(M,M); // Used if variables are grouped
  double E_xiInv; // Used if variables are not grouped
@@ -84,23 +86,29 @@ List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::m
  count = 0;
  List list;
  
-  
   if(savepath){
     theta_path.slice(0) = theta;
   }
     
-    
   while(eps>epsilon & count < maxitr){
       
     // E-step
-    E_NuInv = E_Nu(Lambda_sq);
+    if(GHS_like == false){
+      E_NuInv = E_Nu(Lambda_sq);
+    }
+    else{
+      // For the GHS-like prior, we update the matrix Nu of latent shrinkage parameters
+      E_Nu_mat = E_Nu_GHSlike(tau_sq, theta);
+    }
+    
+    // The updates below are only relevant for standard GHS
     if (exist_group>0){
       E_XiInv = E_xi_group(Tau_sq);
     }
-    else {
+    else if (GHS_like == false){
       E_xiInv = E_xi(tau_sq);
     }
-    // Trick for simplicity of computations: multiply expectations by 2 to get modes
+    // Trick for simplicity of computations of ICM: multiply expectations by 2 to get modes
     if(use_ICM){
       if(exist_group>0){
         E_XiInv = 2*E_XiInv;
@@ -120,11 +128,19 @@ List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::m
       theta_sigma_update = M_theta(N, M, theta, S, sigma, Lambda_sq, pseq, exist_group, group, Tau_sq, machine_eps, stop_underflow);
     }
     else{
-      Lambda_sq = M_lambda(N, M, theta, E_NuInv, exist_group, group, S, machine_eps, stop_underflow, tau_sq);
-      if (fix_tau == false){
-        tau_sq = M_tau(M, theta, Lambda_sq, E_xiInv, machine_eps, stop_underflow);
+      // For standard GHS, we update Lambda_sq, tau and theta in the M-step
+      if (GHS_like == false){
+        Lambda_sq = M_lambda(N, M, theta, E_NuInv, exist_group, group, S, machine_eps, stop_underflow, tau_sq);
+        if (fix_tau == false){
+          tau_sq = M_tau(M, theta, Lambda_sq, E_xiInv, machine_eps, stop_underflow);
+        }
+        theta_sigma_update = M_theta(N, M, theta, S, sigma, Lambda_sq, pseq, exist_group, group, S,machine_eps, stop_underflow, tau_sq, GHS_like); // Pass S as dummy argument
       }
-      theta_sigma_update = M_theta(N, M, theta, S, sigma, Lambda_sq, pseq, exist_group, group, S,machine_eps, stop_underflow, tau_sq); // Pass S as dummy argument
+      // For the GHS-like prior, we update theta only in the M-step
+      else {
+        // Use trick to reuse code: 
+        theta_sigma_update = M_theta(N, M, theta, S, sigma, E_Nu_mat, pseq, exist_group, group, S,machine_eps, stop_underflow, tau_sq/2, GHS_like); // Pass S as dummy argument
+      }
     }
 
     theta_update = theta_sigma_update.slice(0);
@@ -153,7 +169,13 @@ List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::m
     if (use_ICM || save_Q) {
       Q_val_old = Q_val_new;
     } 
-    eps = max(max(abs(theta_update - theta)));
+    if (GHS_like == false){
+      eps = max(max(abs(theta_update - theta)));
+    }
+    else{
+      eps = sqrt( ( sum(sum(pow((theta_update - theta),2))) ) );
+    }
+    
     theta = theta_update;
     count++;
     if(verbose){
@@ -164,29 +186,36 @@ List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::m
   }
   theta = theta_update;
   Rcout << " done" << endl;
-  Q_vals= Q_vals.head(count);
+  if(save_Q){
+    Q_vals= Q_vals.head(count);
+  }
   // Save results
   list["S"] = S;
   list["theta"] = theta;  
   list["sigma"] = sigma;
-  list["Lambda_sq"] = Lambda_sq;
-  if(exist_group>0){
-    list["tau_sq"] = Tau_sq;
-  }
-  else{
-    list["tau_sq"] = tau_sq;
-  }
   list["X"] = X;
-  if(use_ICM){
-    list["Nu"] = 1/E_NuInv;
+  if(GHS_like == false){
+    list["Lambda_sq"] = Lambda_sq;
     if(exist_group>0){
-      list["Xi"] = 1/E_XiInv;
+      list["tau_sq"] = Tau_sq;
     }
     else{
-      list["xi"] = 1/E_xiInv;
+      list["tau_sq"] = tau_sq;
     }
+    if(use_ICM){
+      list["Nu"] = 1/E_NuInv;
+      if(exist_group>0){
+        list["Xi"] = 1/E_XiInv;
+      }
+      else{
+        list["xi"] = 1/E_xiInv;
+      }
+    }
+  } 
+  else{
+    list["a"] = tau_sq;
+    list["Nu"] = E_Nu_mat;
   }
-  
   if(save_Q){
     list["Q_vals"] = Q_vals;  
   }

@@ -7,7 +7,7 @@ using namespace std;
 using namespace arma;
 using namespace Rcpp;
 
-cube M_theta(int N, int M, mat theta, mat &S, mat sigma, mat &Lambda_sq, uvec pseq, int exist_group, uvec &group, mat Tau_sq, double machine_eps,bool stop_underflow, double tau_sq) {
+cube M_theta(int N, int M, mat theta, mat &S, mat sigma, mat &Lambda_sq, uvec pseq, int exist_group, uvec &group, mat Tau_sq, double machine_eps,bool stop_underflow, double tau_sq, bool GHS_like) {
   
   // Return a MxMx2 cube with theta and sigma
   cube res(M,M,2);
@@ -28,7 +28,8 @@ cube M_theta(int N, int M, mat theta, mat &S, mat sigma, mat &Lambda_sq, uvec ps
   mat Tau_sq_i_mi(M-1,1); // Vector of tau_sq values of partition. Not used if varibles are not grouped. 
   
   // Diagonal matrices
-  mat Lambda_diag = zeros<mat>(M-1,M-1);
+  mat Lambda_diag  = zeros<mat>(M-1,M-1);
+ 
   mat Tau_diag = zeros<mat>(M-1,M-1);
   
   // Some additional quantities
@@ -52,7 +53,13 @@ cube M_theta(int N, int M, mat theta, mat &S, mat sigma, mat &Lambda_sq, uvec ps
     // Find inverse of theta submatrix
     theta_mi_mi_Inv = sigma_mi_mi - sigma_i_mi*sigma_i_mi.t()/sigma_i_i(0,0);
     
-    Lambda_diag.diag() = 1/Lambda_sq_i_mi;
+    if(GHS_like==true){
+      Lambda_diag.diag() = Lambda_sq_i_mi;
+    }
+    else {
+      Lambda_diag.diag() = 1/Lambda_sq_i_mi;
+    }
+    
     
     if (exist_group){
       // Find Tau matrix of all group combinations. 
@@ -63,7 +70,7 @@ cube M_theta(int N, int M, mat theta, mat &S, mat sigma, mat &Lambda_sq, uvec ps
     }
     
     theta_i_i = theta_i_mi.t()*theta_mi_mi_Inv*theta_i_mi + M/S_i_i(0,0);
-    
+     
     // Avoid computing these quantities multiple times
     theta_prod_vec = theta_mi_mi_Inv*theta_i_mi;
     theta_prod_val = theta_i_i - theta_i_mi.t()*theta_prod_vec;

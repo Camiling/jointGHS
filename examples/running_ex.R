@@ -1,5 +1,7 @@
 ## Testing fastGHS
 
+# The first simple running example
+
 # Note that in these examples, tau is not fixed. 
 
 # ---------------------------------------------
@@ -11,7 +13,7 @@ library(huge)
 library(network)
 library(GGally)
 set.seed(2020)
-g <- huge.generator(n=50,d=100,graph = 'scale-free')
+g <- huge::huge.generator(n=50,d=100,graph = 'scale-free')
 X <- scale(g$data)
 res <- fastGHS(X, epsilon = 1e-7, savepath = T)
 # select the 2% edges with the largest partial correlation to get the correct sparsity

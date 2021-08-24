@@ -18,6 +18,7 @@ fastGHS(
   group = NULL,
   save_Q = F,
   fix_tau = FALSE,
+  GHS_like = FALSE,
   stop_underflow = FALSE
 )
 }
@@ -47,6 +48,8 @@ fastGHS(
 \item{save_Q}{should the value of the objective function at each step be saved?}
 
 \item{fix_tau}{logical. Should tau be fixed?}
+
+\item{GHS_like}{logical. Should the GHS-like penalty be used?}
 
 \item{stop_underflow}{should underflow be avoided by never allowing doubles to be smaller than the machine precision?}
 }

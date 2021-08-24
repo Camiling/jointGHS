@@ -23,6 +23,7 @@ ECM_GHS(
   machine_eps,
   use_ICM = FALSE,
   fix_tau = FALSE,
+  GHS_like = FALSE,
   stop_underflow = FALSE
 )
 }
