@@ -370,7 +370,7 @@ theta.est.fix5.3[1:5,1:5]
 # EXAMPLE 6 ------------------------------------------------------------------
 # GENERATE GRAPH with tau fixed: n=500, p=100, larger partial correlations (0.183)
 
-# Test sensitivity to choice of tau (within same magnitude), with strong signal, small noise
+# Test sensitivity to choice of tau (within same magnitude), with stronger signal, small noise
 n.fix6=500
 p.fix6=100
 set.seed(12345)
@@ -430,11 +430,12 @@ theta.est.fix6.2[1:5,1:5]
 #[4,] 0.0000000 0.0000000 0.2285760 1.000000 0.0000000
 #[5,] 0.0000000 0.0000000 0.1938736 0.000000 1.0000000
 
+
 # With this strong signal, the choice of tau is much less important (but larger is better, as more edges are allowed in the estimated graph)
 
 
 
-# EXAMPLE 5 ------------------------------------------------------------------
+# EXAMPLE 7 ------------------------------------------------------------------
 # GENERATE GRAPH with tau fixed: n=50, p=100, larger partial correlations (0.192)
 
 # Test sensitivity to initialisation
@@ -529,4 +530,7 @@ theta.est.fix7.3[1:5,1:5]
 # Very similar resultsto the others, only a bit better. 
 # Sparsity is preserved in all cases.
 
+
+=======
+# With this stronger signal, the choice of tau is much less important (but larger is better, as more edges are allowed in the estimated graph)
 
