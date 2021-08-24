@@ -66,11 +66,7 @@ cube M_theta(int N, int M, mat theta, mat &S, mat sigma, mat &Lambda_sq, uvec ps
       Tau_diag.diag() = 1/Tau_G.submat(remove_i,left_i);
       theta_i_mi = -inv(S_i_i(0,0)*theta_mi_mi_Inv + exp(Lambda_diag_log)*Tau_diag)*S_i_mi;
     }else {
-      for (j = 0; j < M-1; j++){
-        max_vec(j,j) = max(Lambda_diag_log(j,j), tau_sq_log); 
-      }
-      Lambda_diag_log.diag() = exp(Lambda_diag_log.diag()-max_vec.diag())/exp(tau_sq_log-max_vec.diag()); // Use this 
-      theta_i_mi = -inv(S_i_i(0,0)*theta_mi_mi_Inv + Lambda_diag_log)*S_i_mi;
+      theta_i_mi = -inv(S_i_i(0,0)*theta_mi_mi_Inv + Lambda_diag/tau_sq)*S_i_mi;
     }
     
     theta_i_i = theta_i_mi.t()*theta_mi_mi_Inv*theta_i_mi + M/S_i_i(0,0);
