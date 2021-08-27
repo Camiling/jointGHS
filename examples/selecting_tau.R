@@ -22,7 +22,7 @@ data.sf.select$sparsity # True sparsity: 0.04
 # Look at precision matrix (partial correlations)
 cov2cor(theta.true.select[1:5,1:5])
 
-taus = seq(1e-6,1,length.out = 100)
+taus = seq(1e-6,1,length.out = 100) # Actually tau square
 res.select.ghs.list <- lapply(taus,FUN = function(l) fastGHS(x.sf.select,tau_sq = l,epsilon = 1e-3, fix_tau = T))
 dev.new()
 par(mfrow=c(2,2))
@@ -374,3 +374,181 @@ plot(taus.5, recall.5,ylab='recall',type='l', col='deeppink3', ylim=c(0,1))
 points(tau.ind.5.max$tau, recall.5[tau.ind.5.max$tau_ind], col='darkorange', pch=16, cex=1.5)
 
 dev.off()
+
+
+# Test Williams et al. approach to selecting tau (based on Piironen & Vehtari) -------------------------
+
+# Prior expectation of sparsity
+alpha.prior = seq(0,0.1,length.out = 100)
+tau.prior.1 = alpha.prior/(1-alpha.prior)/sqrt(n.select)
+cbind(alpha.prior,tau.prior.1)
+
+tau.prior.2 = alpha.prior/(1-alpha.prior)/sqrt(n.select.2)
+cbind(alpha.prior,tau.prior.2)
+
+tau.prior.3 = alpha.prior/(1-alpha.prior)/sqrt(n.select.3)
+cbind(alpha.prior,tau.prior.3)
+
+tau.prior.4 = alpha.prior/(1-alpha.prior)/sqrt(n.select.4)
+cbind(alpha.prior,tau.prior.4)
+
+tau.prior.5 = alpha.prior/(1-alpha.prior)/sqrt(n.select.5)
+cbind(alpha.prior,tau.prior.5)
+
+# They are all very small....
+
+# Recreate plots with these values marked out
+
+tab.1 = as.data.frame(cbind(taus, spars.1))
+ind.tau.1 = sapply(tau.prior.1, FUN=function(t) which.min(abs(t^2-taus)))
+
+tab.2 = as.data.frame(cbind(taus.2, spars.2))
+ind.tau.2 = sapply(tau.prior.2, FUN=function(t) which.min(abs(t^2-taus)))
+
+tab.3 = as.data.frame(cbind(taus.3, spars.3))
+ind.tau.3 = sapply(tau.prior.3, FUN=function(t) which.min(abs(t^2-taus)))
+
+tab.4 = as.data.frame(cbind(taus.4, spars.4))
+ind.tau.4 = sapply(tau.prior.4, FUN=function(t) which.min(abs(t^2-taus)))
+
+tab.5 = as.data.frame(cbind(taus.5, spars.5))
+ind.tau.5 = sapply(tau.prior.5, FUN=function(t) which.min(abs(t^2-taus)))
+
+pdf('~/Documents/Cambridge/PhD/fastGHS_files/fastGHS/examples/selectingTau_Williams.pdf',10,20)
+par(mfrow=c(5,3))
+plot(taus, spars.1, type='l',ylab='sparsity', ylim=c(0,max(data.sf.select$sparsity+0.001,spars.1+0.001 )))
+abline(data.sf.select$sparsity, 0, col='limegreen', lty=2)
+points(tau.prior.1, spars.1[ind.tau.1],col='darkorchid2', pch=16, cex=1.5)
+plot(taus, prec.1, ylab='precision',type='l', col='deepskyblue2', ylim=c(0,1))
+points(tau.prior.1, prec.1[ind.tau.1],col='darkorchid2', pch=16, cex=1.5)
+plot(taus, recall.1,ylab='recall',type='l', col='deeppink3', ylim=c(0,1))
+points(tau.prior.1, recall.1[ind.tau.1],col='darkorchid2', pch=16, cex=1.5)
+
+plot(taus.2, spars.2, type='l',ylab='sparsity', ylim=c(0,max(data.sf.select.2$sparsity+0.001,spars.2+0.001 )))
+abline(data.sf.select.2$sparsity, 0, col='limegreen', lty=2)
+points(tau.prior.2, spars.2[ind.tau.2],col='darkorchid2', pch=16, cex=1.5)
+plot(taus.2, prec.2, ylab='precision',type='l', col='deepskyblue2', ylim=c(0,1))
+points(tau.prior.2, prec.2[ind.tau.2],col='darkorchid2', pch=16, cex=1.5)
+plot(taus.2, recall.2,ylab='recall',type='l', col='deeppink3', ylim=c(0,1))
+points(tau.prior.2, recall.2[ind.tau.2],col='darkorchid2', pch=16, cex=1.5)
+
+
+plot(taus.3, spars.3, type='l',ylab='sparsity', ylim=c(0,max(data.sf.select.3$sparsity+0.001,spars.3+0.001 )))
+abline(data.sf.select.3$sparsity, 0, col='limegreen', lty=2)
+points(tau.prior.3, spars.3[ind.tau.3],col='darkorchid2', pch=16, cex=1.5)
+plot(taus.3, prec.3, ylab='precision',type='l', col='deepskyblue2', ylim=c(0,1))
+points(tau.prior.3, prec.3[ind.tau.3],col='darkorchid2', pch=16, cex=1.5)
+plot(taus.3, recall.3,ylab='recall',type='l', col='deeppink3', ylim=c(0,1))
+points(tau.prior.3, recall.3[ind.tau.3],col='darkorchid2', pch=16, cex=1.5)
+
+
+plot(taus.4, spars.4, type='l',ylab='sparsity', ylim=c(0,max(data.sf.select.4$sparsity+0.001,spars.4+0.001 )))
+abline(data.sf.select.4$sparsity, 0, col='limegreen', lty=2)
+points(tau.prior.4, spars.4[ind.tau.4],col='darkorchid2', pch=16, cex=1.5)
+plot(taus.4, prec.4, ylab='precision',type='l', col='deepskyblue2', ylim=c(0,1))
+points(tau.prior.4, prec.4[ind.tau.4],col='darkorchid2', pch=16, cex=1.5)
+plot(taus.4, recall.4, ylab='recall',type='l', col='deeppink3', ylim=c(0,1))
+points(tau.prior.4, recall.4[ind.tau.4],col='darkorchid2', pch=16, cex=1.5)
+
+plot(taus.5, spars.5, type='l',ylab='sparsity', ylim=c(0,max(data.sf.select.5$sparsity+0.001,spars.5+0.001 )))
+abline(data.sf.select.5$sparsity, 0, col='limegreen', lty=2)
+points(tau.prior.5, spars.5[ind.tau.5],col='darkorchid2', pch=16, cex=1.5)
+plot(taus.5, prec.5, ylab='precision',type='l', col='deepskyblue2', ylim=c(0,1))
+points(tau.prior.5, prec.5[ind.tau.5],col='darkorchid2', pch=16, cex=1.5)
+plot(taus.5, recall.5,ylab='recall',type='l', col='deeppink3', ylim=c(0,1))
+points(tau.prior.5, recall.5[ind.tau.5],col='darkorchid2', pch=16, cex=1.5)
+
+dev.off()
+
+# Also create plots of alpha vs tau to illustrate how it changes
+
+plot(alpha.prior, tau.prior.1)
+plot(alpha.prior,tau.prior.2)
+plot(alpha.prior, tau.prior.3)
+plot(alpha.prior,tau.prior.4)
+plot(alpha.prior, tau.prior.5)
+
+# Increases linearly?
+
+
+# Recreate plots with tau selected with only alpha = true sparsity marked
+
+alpha.prior.1 = data.sf.select$sparsity
+tau.prior.1 = alpha.prior.1/(1-alpha.prior.1)/sqrt(n.select)
+cbind(alpha.prior.1,tau.prior.1)
+res.alpha.1 = fastGHS(x.sf.select,tau_sq = tau.prior.1^2 ,epsilon = 1e-3, fix_tau = T)
+
+alpha.prior.2 = data.sf.select.2$sparsity
+tau.prior.2 = alpha.prior.2/(1-alpha.prior.2)/sqrt(n.select.2)
+cbind(alpha.prior.2,tau.prior.2)
+res.alpha.2 = fastGHS(x.sf.select.2,tau_sq = tau.prior.2^2 ,epsilon = 1e-3, fix_tau = T)
+
+alpha.prior.3 = data.sf.select.3$sparsity
+tau.prior.3 = alpha.prior.3/(1-alpha.prior.3)/sqrt(n.select.3)
+cbind(alpha.prior.3,tau.prior.3)
+res.alpha.3 = fastGHS(x.sf.select.3,tau_sq = tau.prior.3^2 ,epsilon = 1e-3, fix_tau = T)
+
+alpha.prior.4 = data.sf.select.4$sparsity
+tau.prior.4 = alpha.prior.4/(1-alpha.prior.4)/sqrt(n.select.4)
+cbind(alpha.prior.4,tau.prior.4)
+res.alpha.4 = fastGHS(x.sf.select.4,tau_sq = tau.prior.4^2 ,epsilon = 1e-3, fix_tau = T)
+
+alpha.prior.5 = data.sf.select.5$sparsity
+tau.prior.5 = alpha.prior.5/(1-alpha.prior.5)/sqrt(n.select.5)
+cbind(alpha.prior.5,tau.prior.5)
+res.alpha.5 = fastGHS(x.sf.select.5,tau_sq = tau.prior.5^2 ,epsilon = 1e-3, fix_tau = T)
+
+# As the tau values are so small, we must use a higher threshold in order to get readable results. 
+hist(abs(res.alpha.1$theta[!diag(p.select)]))
+# not a clear distinction between zero- and non-zero values: not a good tau value. 
+
+pdf('~/Documents/Cambridge/PhD/fastGHS_files/fastGHS/examples/selectingTau_Williams_truesize.pdf',10,20)
+par(mfrow=c(5,3))
+plot(taus, spars.1, type='l',ylab='sparsity', ylim=c(0,max(data.sf.select$sparsity+0.001,spars.1+0.001 )))
+abline(data.sf.select$sparsity, 0, col='limegreen', lty=2)
+points(tau.prior.1, sparsity(abs(res.alpha.1$theta)>1e-4),col='darkorchid2', pch=16, cex=1.5)
+plot(taus, prec.1, ylab='precision',type='l', col='deepskyblue2', ylim=c(0,1))
+points(tau.prior.1, precision(theta.true.select!=0,abs(res.alpha.1$theta)>1e-4),col='darkorchid2', pch=16, cex=1.5)
+plot(taus, recall.1,ylab='recall',type='l', col='deeppink3', ylim=c(0,1))
+points(tau.prior.1, recall(theta.true.select!=0,abs(res.alpha.1$theta)>1e-4),col='darkorchid2', pch=16, cex=1.5)
+
+plot(taus.2, spars.2, type='l',ylab='sparsity', ylim=c(0,max(data.sf.select.2$sparsity+0.001,spars.2+0.001 )))
+abline(data.sf.select.2$sparsity, 0, col='limegreen', lty=2)
+points(tau.prior.2, sparsity(abs(res.alpha.2$theta)>1e-4),col='darkorchid2', pch=16, cex=1.5)
+plot(taus.2, prec.2, ylab='precision',type='l', col='deepskyblue2', ylim=c(0,1))
+points(tau.prior.2, precision(theta.true.select.2!=0,abs(res.alpha.2$theta)>1e-4),col='darkorchid2', pch=16, cex=1.5)
+plot(taus.2, recall.2,ylab='recall',type='l', col='deeppink3', ylim=c(0,1))
+points(tau.prior.2, recall(theta.true.select.2!=0,abs(res.alpha.2$theta)>1e-4),col='darkorchid2', pch=16, cex=1.5)
+
+
+plot(taus.3, spars.3, type='l',ylab='sparsity', ylim=c(0,max(data.sf.select.3$sparsity+0.001,spars.3+0.001 )))
+abline(data.sf.select.3$sparsity, 0, col='limegreen', lty=2)
+points(tau.prior.3, sparsity(abs(res.alpha.3$theta)>1e-4),col='darkorchid2', pch=16, cex=1.5)
+plot(taus.3, prec.3, ylab='precision',type='l', col='deepskyblue2', ylim=c(0,1))
+points(tau.prior.3, precision(theta.true.select.3!=0,abs(res.alpha.3$theta)>1e-4),col='darkorchid2', pch=16, cex=1.5)
+plot(taus.3, recall.3,ylab='recall',type='l', col='deeppink3', ylim=c(0,1))
+points(tau.prior.3, recall(theta.true.select.3!=0,abs(res.alpha.3$theta)>1e-4),col='darkorchid2', pch=16, cex=1.5)
+
+
+plot(taus.4, spars.4, type='l',ylab='sparsity', ylim=c(0,max(data.sf.select.4$sparsity+0.001,spars.4+0.001 )))
+abline(data.sf.select.4$sparsity, 0, col='limegreen', lty=2)
+points(tau.prior.4, sparsity(abs(res.alpha.4$theta)>1e-4),col='darkorchid2', pch=16, cex=1.5)
+plot(taus.4, prec.4, ylab='precision',type='l', col='deepskyblue2', ylim=c(0,1))
+points(tau.prior.4, precision(theta.true.select.4!=0,abs(res.alpha.4$theta)>1e-4),col='darkorchid2', pch=16, cex=1.5)
+plot(taus.4, recall.4, ylab='recall',type='l', col='deeppink3', ylim=c(0,1))
+points(tau.prior.4, recall(theta.true.select.4!=0,abs(res.alpha.4$theta)>1e-4),col='darkorchid2', pch=16, cex=1.5)
+
+plot(taus.5, spars.5, type='l',ylab='sparsity', ylim=c(0,max(data.sf.select.5$sparsity+0.001,spars.5+0.001 )))
+abline(data.sf.select.5$sparsity, 0, col='limegreen', lty=2)
+points(tau.prior.5, sparsity(abs(res.alpha.5$theta)>1e-4),col='darkorchid2', pch=16, cex=1.5)
+plot(taus.5, prec.5, ylab='precision',type='l', col='deepskyblue2', ylim=c(0,1))
+points(tau.prior.5, precision(theta.true.select.5!=0,abs(res.alpha.5$theta)>1e-4),col='darkorchid2', pch=16, cex=1.5)
+plot(taus.5, recall.5,ylab='recall',type='l', col='deeppink3', ylim=c(0,1))
+points(tau.prior.5, recall(theta.true.select.5!=0,abs(res.alpha.5$theta)>1e-4),col='darkorchid2', pch=16, cex=1.5)
+
+dev.off()
+
+
+
+
+
