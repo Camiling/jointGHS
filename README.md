@@ -1,1 +1,1 @@
-# fastGHS
+# jointGHS
