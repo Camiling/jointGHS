@@ -4,14 +4,10 @@
 #include <math.h> 
 
 #include "E_xi.h"
-#include "E_xi_group.h"
 #include "M_theta.h"
 #include "M_tau.h"
-#include "M_tau_group.h"
 #include "E_Nu.h"
-#include "E_Nu_GHSlike.h"
 #include "M_lambda.h"
-
 #include "Q_val.h"
 
 using namespace std;
@@ -47,13 +43,10 @@ using namespace arma;
 //' 
 //' @export
 // [[Rcpp::export]]
-List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::mat Lambda_sq, double epsilon, bool verbose, int maxitr, bool savepath, int exist_group, arma::uvec group, arma::mat N_groups, bool save_Q, double tau_sq, arma::mat Tau_sq, double machine_eps, bool use_ICM=false, bool fix_tau = false, bool GHS_like = false, bool stop_underflow=false) {
+List ECM_GHS(List X, List S, List theta, List sigma, List Lambda_sq, arma::vec N, int M, int K, double epsilon, bool verbose, int maxitr, bool savepath, bool save_Q, arma::vec tau_sq, bool use_ICM=false, bool fix_tau = false) {
 
-  // get dimensions
-  const int M = X.n_cols;
-  const int N = X.n_rows;
-  
-  // For saving variables
+
+    // For saving variables
   int save_dim;
   if (M < 201 & savepath==true){ // Saving exhausts memory if M>201
     save_dim = maxitr;

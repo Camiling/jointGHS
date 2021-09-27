@@ -1,5 +1,5 @@
-#ifndef _fastGHS_ECM_GHS_H
-#define _fastGHS_ECM_GHS_H
+#ifndef _jointGHS_ECM_GHS_H
+#define _jointGHS_ECM_GHS_H
 
 #include <RcppArmadillo.h>
 #include <stdio.h>
@@ -10,5 +10,5 @@ using namespace Rcpp;
 using namespace arma;
 
 
-List ECM_GHS(mat X, mat S, mat theta, mat sigma, mat Lambda_sq, double epsilon, bool verbose, int maxitr, bool savepath, int exist_group, uvec group, mat N_groups, bool save_Q, double tau_sq, mat Tau_sq, double machine_eps, bool use_ICM = false, bool fix_tau = false, bool GHS_like = false, bool stop_underflow=true)
+List ECM_GHS(List X, List S, List theta, List sigma, List Lambda_sq, arma::vec N, int M, int K, double epsilon, bool verbose, int maxitr, bool savepath, bool save_Q, arma::vec tau_sq, bool use_ICM = false, bool fix_tau = false)
 #endif

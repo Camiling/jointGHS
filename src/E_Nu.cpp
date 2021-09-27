@@ -7,7 +7,7 @@ using namespace std;
 using namespace Rcpp;
 using namespace arma;
 
-mat E_Nu(mat &Lambda_sq) {
+mat E_Nu(List &Lambda_sq) {
   // Get the conditional expectation of 1/Nu
   mat ans = Lambda_sq/(Lambda_sq+1);
   return(ans);

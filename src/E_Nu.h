@@ -1,5 +1,5 @@
-#ifndef _fastGHS_E_NU_H
-#define _fastGHS_E_NU_H
+#ifndef _jointGHS_E_NU_H
+#define _jointGHS_E_NU_H
 
 #include <RcppArmadillo.h>
 using namespace arma;
@@ -9,5 +9,5 @@ using namespace arma;
 //using namespace Rcpp;
 //using namespace arma;
 
-mat E_Nu(mat &Lambda_sq);
+mat E_Nu(List &Lambda_sq);
 #endif
