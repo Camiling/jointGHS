@@ -1,6 +1,6 @@
-#' Perform GHS with ECM/ICM
+#' Perform joint GHS with ECM/ICM
 #' 
-#' This function performs expectation-conditional-maximation or iterated conditional mode estimation for the graphical horseshoe
+#' This function performs expectation-conditional-maximation or iterated conditional mode estimation for the joint graphical horseshoe
 #' 
 #' @param X \eqn{n} by \eqn{p} matrix of data
 #' @param theta initial value of the \eqn{p} by \eqn{p} precision matrix
@@ -20,7 +20,7 @@
 #' @return a fitted EMGS object
 #' @export 
 #' 
-fastGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, method= 'ECM',epsilon = 1e-5, maxitr = 1e5, verbose=TRUE, savepath = FALSE,  group=NULL, save_Q = F, fix_tau = FALSE, GHS_like = FALSE, stop_underflow = FALSE){
+jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, method= 'ECM',epsilon = 1e-5, maxitr = 1e5, verbose=TRUE, savepath = FALSE,  group=NULL, save_Q = F, fix_tau = FALSE, GHS_like = FALSE, stop_underflow = FALSE){
 
   # It the GHS-like penalty is used, tau_sq represents the fixed shrinkage parameter 'a' and N is the matrix of nu_ij's
   
