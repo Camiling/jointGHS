@@ -1,4 +1,4 @@
-useDynLib(fastGHS, .registration=TRUE)
+useDynLib(jointGHS, .registration=TRUE)
 exportPattern("^[[:alpha:]]+")
 importFrom(Rcpp, evalCpp)
-export(fastGHS)
+export(jointGHS)
