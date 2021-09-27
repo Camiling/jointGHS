@@ -13,7 +13,7 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 
 // ECM_GHS
 List ECM_GHS(arma::mat X, arma::mat S, arma::mat theta, arma::mat sigma, arma::mat Lambda_sq, double epsilon, bool verbose, int maxitr, bool savepath, int exist_group, arma::uvec group, arma::mat N_groups, bool save_Q, double tau_sq, arma::mat Tau_sq, double machine_eps, bool use_ICM, bool fix_tau, bool GHS_like, bool stop_underflow);
-RcppExport SEXP _fastGHS_ECM_GHS(SEXP XSEXP, SEXP SSEXP, SEXP thetaSEXP, SEXP sigmaSEXP, SEXP Lambda_sqSEXP, SEXP epsilonSEXP, SEXP verboseSEXP, SEXP maxitrSEXP, SEXP savepathSEXP, SEXP exist_groupSEXP, SEXP groupSEXP, SEXP N_groupsSEXP, SEXP save_QSEXP, SEXP tau_sqSEXP, SEXP Tau_sqSEXP, SEXP machine_epsSEXP, SEXP use_ICMSEXP, SEXP fix_tauSEXP, SEXP GHS_likeSEXP, SEXP stop_underflowSEXP) {
+RcppExport SEXP _jointGHS_ECM_GHS(SEXP XSEXP, SEXP SSEXP, SEXP thetaSEXP, SEXP sigmaSEXP, SEXP Lambda_sqSEXP, SEXP epsilonSEXP, SEXP verboseSEXP, SEXP maxitrSEXP, SEXP savepathSEXP, SEXP exist_groupSEXP, SEXP groupSEXP, SEXP N_groupsSEXP, SEXP save_QSEXP, SEXP tau_sqSEXP, SEXP Tau_sqSEXP, SEXP machine_epsSEXP, SEXP use_ICMSEXP, SEXP fix_tauSEXP, SEXP GHS_likeSEXP, SEXP stop_underflowSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -43,11 +43,11 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_fastGHS_ECM_GHS", (DL_FUNC) &_fastGHS_ECM_GHS, 20},
+    {"_jointGHS_ECM_GHS", (DL_FUNC) &_jointGHS_ECM_GHS, 20},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_fastGHS(DllInfo *dll) {
+RcppExport void R_init_jointGHS(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }
