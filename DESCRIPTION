@@ -1,11 +1,11 @@
-Package: fastGHS
+Package: jointGHS
 Type: Package
-Title: Fast computation of posterior modes in the graphical horseshoe
+Title: Joint graphical horseshoe for multiple network inference with shared information
 Version: 1.0
-Date: 2021-05-03
+Date: 2021-09-27
 Authors@R: 
     person("Camilla", "Lingjaerde", email = "camilla.lingjaerde@mrc-bsu.cam.ac.uk", role = c("cre", "aut"), comment = c(ORCID = "0000-0003-2701-5686"))
-Description: Compute the posterior modes in the graphical horseshoe using fast ECM or ICM algorithms.
+Description: Compute the posterior modes in the joint graphical horseshoe for multiple networks with shared information using a fast ECM algorithm.
 License: GPL-3 + file LICENSE
 Encoding: UTF-8
 RoxygenNote: 7.1.1
