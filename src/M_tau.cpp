@@ -8,7 +8,7 @@ using namespace std;
 using namespace Rcpp;
 using namespace arma;
 
-double M_tau(int M, mat &theta, mat &Lambda_sq, double E_xi, double machine_eps, bool stop_underflow) {
+double M_tau(int M, mat &theta, mat &Lambda_sq, double E_xi) {
   // maximize Tau_sq
   // No grouping
   
@@ -24,12 +24,5 @@ double M_tau(int M, mat &theta, mat &Lambda_sq, double E_xi, double machine_eps,
   double sum_temp = (sum(sum(mat_temp)) - sum(mat_temp.diag()))/2;
   double tau_sq = (2*sum_temp + 4*E_xi)/(M*(M-1)+6);
   
-  if(stop_underflow){
-    if(tau_sq<machine_eps){
-      tau_sq = machine_eps;
-    }
-  }
-
-  //Rcout << "Tau = " << tau_sq << "\n";
   return tau_sq;
 }

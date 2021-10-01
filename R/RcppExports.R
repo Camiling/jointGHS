@@ -26,7 +26,7 @@
 #' @return A List with resulting ECM estimates, and saved path and objective function convergence information if requested
 #' 
 #' @export
-ECM_GHS <- function(X, S, theta, sigma, Lambda_sq, epsilon, verbose, maxitr, savepath, exist_group, group, N_groups, save_Q, tau_sq, Tau_sq, machine_eps, use_ICM = FALSE, fix_tau = FALSE, GHS_like = FALSE, stop_underflow = FALSE) {
-    .Call(`_jointGHS_ECM_GHS`, X, S, theta, sigma, Lambda_sq, epsilon, verbose, maxitr, savepath, exist_group, group, N_groups, save_Q, tau_sq, Tau_sq, machine_eps, use_ICM, fix_tau, GHS_like, stop_underflow)
+ECM_GHS <- function(S, theta, sigma, Lambda_sq, N, M, K, epsilon, verbose, maxitr, savepath, save_Q, tau_sq, use_ICM = FALSE, fix_tau = FALSE) {
+    .Call(`_jointGHS_ECM_GHS`, S, theta, sigma, Lambda_sq, N, M, K, epsilon, verbose, maxitr, savepath, save_Q, tau_sq, use_ICM, fix_tau)
 }
 

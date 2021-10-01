@@ -16,7 +16,6 @@ using namespace arma;
 
 
 
-
 //' Perform GHS with ECM
 //' 
 //' This function performs expectation-conditional-maximation or iterated conditional mode estimation for the graphical horseshoe
@@ -43,8 +42,7 @@ using namespace arma;
 //' 
 //' @export
 // [[Rcpp::export]]
-List ECM_GHS(List X, List S, List theta, List sigma, List Lambda_sq, arma::vec N, int M, int K, double epsilon, bool verbose, int maxitr, bool savepath, bool save_Q, arma::vec tau_sq, bool use_ICM=false, bool fix_tau = false) {
-
+List ECM_GHS(arma::cube S, arma::cube theta, arma::cube sigma, arma::cube Lambda_sq, arma::vec N, int M, int K, double epsilon, bool verbose, int maxitr, bool savepath, bool save_Q, arma::vec tau_sq, bool use_ICM=false, bool fix_tau = false) {
 
     // For saving variables
   int save_dim;
@@ -54,167 +52,113 @@ List ECM_GHS(List X, List S, List theta, List sigma, List Lambda_sq, arma::vec N
   else{
     save_dim = 1;
   }
-  arma::cube theta_path(M, M, save_dim);
-  arma::vec Q_vals(maxitr);
-  double Q_val_old= -numeric_limits<double>::max();
-  double Q_val_new;
+
+  // All of this must be changed, if it is to be used
+  //arma::cube theta_path(M, M, save_dim);
+  //arma::vec Q_vals(maxitr);
+  //double Q_val_old = -numeric_limits<double>::max();
+  //double Q_val_new;
   
   // initialize intermediate values
-  int niter,i, count;
-  double eps;
+  int niter,i, count, k;
+  arma::vec eps(K);
   arma::uvec pseq(M);
   for(i = 0; i < M; i++){
     pseq(i) = i;
   }
   
   // Initialise updates
- arma::mat theta_update = theta; // Save previous estimate to assess convergence
- arma::mat E_Nu_mat(M,M);
+ arma::cube theta_update = theta; // Save previous estimate to assess convergence
  arma::mat E_NuInv(M,M);
- arma::mat E_XiInv(M,M); // Used if variables are grouped
- double E_xiInv; // Used if variables are not grouped
+ double E_xiInv; // Reused for all graphs
  arma::cube theta_sigma_update(M,M,2);
- eps = epsilon + 1;
+ eps = eps + epsilon + 1; // Make the initial value sufficiently large
  niter = 1;
  count = 0;
  List list;
  
-  if(savepath){
-    theta_path.slice(0) = theta;
-  }
+ //if(savepath){
+   // theta_path.slice(0) = theta;
+  //}
     
-  while(eps>epsilon & count < maxitr){
+  while(max(eps)>epsilon & count < maxitr){
       
     // E-step
-    if(GHS_like == false){
-      E_NuInv = E_Nu(Lambda_sq);
-    }
-    else{
-      // For the GHS-like prior, we update the matrix Nu of latent shrinkage parameters
-      E_Nu_mat = E_Nu_GHSlike(tau_sq, theta);
-    }
+    E_NuInv = E_Nu(Lambda_sq, M, K); // Found using all K graphs
     
-    // The updates below are only relevant for standard GHS
-    if (exist_group>0){
-      E_XiInv = E_xi_group(Tau_sq);
-    }
-    else if (GHS_like == false){
-      E_xiInv = E_xi(tau_sq);
-    }
-    // Trick for simplicity of computations of ICM: multiply expectations by 2 to get modes
-    if(use_ICM){
-      if(exist_group>0){
-        E_XiInv = 2*E_XiInv;
-      }
-      else{
+    // For each network separately
+    for(k=0; k < K; k++){
+      E_xiInv = E_xi(tau_sq(k)); // Only used below, so can use the same variable for all K graphs
+      // Trick for simplicity of computations of ICM: multiply expectations by 2 to get modes
+      if(use_ICM){
         E_xiInv = 2*E_xiInv; 
+        E_NuInv = 2*E_NuInv;
       }
-      E_NuInv = 2*E_NuInv;
-    }
-    
-    // M-step
-    if (exist_group>0){
-      Lambda_sq = M_lambda(N, M, theta, E_NuInv, exist_group, group, Tau_sq, machine_eps, stop_underflow);
+      
+      // CM-step
+      // For standard GHS, we update Lambda_sq, tau and theta in the CM-step
+      Lambda_sq.slice(k) = M_lambda(theta.slice(k), E_NuInv, tau_sq(k));
       if (fix_tau == false){
-        Tau_sq = M_tau_group(M, theta, Lambda_sq, exist_group, group, N_groups, E_XiInv, machine_eps, stop_underflow); 
+        tau_sq(k) = M_tau(M, theta.slice(k), Lambda_sq.slice(k), E_xiInv);
       }
-      theta_sigma_update = M_theta(N, M, theta, S, sigma, Lambda_sq, pseq, exist_group, group, Tau_sq, machine_eps, stop_underflow);
-    }
-    else{
-      // For standard GHS, we update Lambda_sq, tau and theta in the M-step
-      if (GHS_like == false){
-        Lambda_sq = M_lambda(N, M, theta, E_NuInv, exist_group, group, S, machine_eps, stop_underflow, tau_sq);
-        if (fix_tau == false){
-          tau_sq = M_tau(M, theta, Lambda_sq, E_xiInv, machine_eps, stop_underflow);
-        }
-        theta_sigma_update = M_theta(N, M, theta, S, sigma, Lambda_sq, pseq, exist_group, group, S,machine_eps, stop_underflow, tau_sq, GHS_like); // Pass S as dummy argument
-      }
-      // For the GHS-like prior, we update theta only in the M-step
-      else {
-        // Use trick to reuse code: 
-        theta_sigma_update = M_theta(N, M, theta, S, sigma, E_Nu_mat, pseq, exist_group, group, S,machine_eps, stop_underflow, tau_sq/2, GHS_like); // Pass S as dummy argument
-      }
-    }
-
-    theta_update = theta_sigma_update.slice(0);
-    sigma = theta_sigma_update.slice(1);
-
-    if(savepath){
-      theta_path.slice(count+1) = theta_update;
-    }
-    // Evaluate objective function if ICM is used, or if it is to be saved
-    if((use_ICM || save_Q) & (exist_group>0)){
-      Q_val_new = Q_val(N, M, theta, S, Lambda_sq, E_NuInv, exist_group, group, Tau_sq, E_XiInv); 
-    }else if (use_ICM || save_Q) {
-      Q_val_new = Q_val(N, M, theta, S, Lambda_sq, E_NuInv, exist_group, group, S, S, tau_sq, E_xiInv);  // Pass S as dummy argument
-    }
-    // If ICM is used, check that objective function value has increased
-    if(use_ICM & (Q_val_old>Q_val_new)){
-      Rcout << "Error: objective function decreasing" << endl;
-      list["Q_val_old"] = Q_val_old;
-      list["Q_val_new"] = Q_val_new;
-      return list;
-    }
-    if(save_Q){
-      Q_vals(count) = Q_val_new;
-    }
-    // Update estimate
-    if (use_ICM || save_Q) {
-      Q_val_old = Q_val_new;
-    } 
-    if (GHS_like == false){
-      eps = max(max(abs(theta_update - theta)));
-    }
-    else{
-      eps = sqrt( ( sum(sum(pow((theta_update - theta),2))) ) );
+      theta_sigma_update = M_theta(N(k), M, theta.slice(k), S.slice(k), sigma.slice(k), Lambda_sq.slice(k), pseq, tau_sq(k)); // Pass S as dummy argument
+      theta_update.slice(k) = theta_sigma_update.slice(0);
+      sigma.slice(k) = theta_sigma_update.slice(1);
+      
+      eps(k) = max(max(abs(theta_update.slice(k) - theta.slice(k))));
+      
+      theta.slice(k) = theta_update.slice(k);
     }
     
-    theta = theta_update;
+    //if(savepath){
+      //theta_path.slice(count+1) = theta_update;
+    //}
+    // Evaluate objective function if ICM is used, or if it is to be saved
+
+    //if (use_ICM || save_Q) {
+    //  Q_val_new = Q_val(N, M, theta, S, Lambda_sq, E_NuInv, exist_group, group, S, S, tau_sq, E_xiInv);  // Pass S as dummy argument
+    //}
+    // If ICM is used, check that objective function value has increased
+    //if(use_ICM & (Q_val_old>Q_val_new)){
+    //  Rcout << "Error: objective function decreasing" << endl;
+    //  list["Q_val_old"] = Q_val_old;
+    //  list["Q_val_new"] = Q_val_new;
+    //  return list;
+    //}
+    //if(save_Q){
+    //  Q_vals(count) = Q_val_new;
+    //}
+    // Update estimate
+    //if (use_ICM || save_Q) {
+    //  Q_val_old = Q_val_new;
+    //} 
+
     count++;
     if(verbose){
-      Rcout << "Itr = " << count << " Max diff = " << eps << endl;
+      Rcout << "Itr = " << count << " Max diff = " << max(eps) << endl;
     }else{
       Rcout << ".";
     }
   }
-  theta = theta_update;
+  theta = theta_update; // update whole list
   Rcout << " done" << endl;
-  if(save_Q){
-    Q_vals= Q_vals.head(count);
-  }
+  //if(save_Q){
+  //  Q_vals= Q_vals.head(count);
+  //}
   // Save results
   list["S"] = S;
   list["theta"] = theta;  
   list["sigma"] = sigma;
-  list["X"] = X;
-  if(GHS_like == false){
-    list["Lambda_sq"] = Lambda_sq;
-    if(exist_group>0){
-      list["tau_sq"] = Tau_sq;
-    }
-    else{
-      list["tau_sq"] = tau_sq;
-    }
-    if(use_ICM){
-      list["Nu"] = 1/E_NuInv;
-      if(exist_group>0){
-        list["Xi"] = 1/E_XiInv;
-      }
-      else{
-        list["xi"] = 1/E_xiInv;
-      }
-    }
-  } 
-  else{
-    list["a"] = tau_sq;
-    list["Nu"] = E_Nu_mat;
-  }
-  if(save_Q){
-    list["Q_vals"] = Q_vals;  
-  }
+
+  list["Lambda_sq"] = Lambda_sq;
+
+  list["tau_sq"] = tau_sq;
   
-  if(savepath){
-    list["theta_path"] = theta_path;
-  }
+  //if(save_Q){
+  //  list["Q_vals"] = Q_vals;  
+  //}
+  //if(savepath){
+  //  list["theta_path"] = theta_path;
+  //}
   return list;
 }

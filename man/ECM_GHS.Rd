@@ -5,31 +5,24 @@
 \title{Perform GHS with ECM}
 \usage{
 ECM_GHS(
-  X,
   S,
   theta,
   sigma,
   Lambda_sq,
+  N,
+  M,
+  K,
   epsilon,
   verbose,
   maxitr,
   savepath,
-  exist_group,
-  group,
-  N_groups,
   save_Q,
   tau_sq,
-  Tau_sq,
-  machine_eps,
   use_ICM = FALSE,
-  fix_tau = FALSE,
-  GHS_like = FALSE,
-  stop_underflow = FALSE
+  fix_tau = FALSE
 )
 }
 \arguments{
-\item{X}{\eqn{n} by \eqn{p} matrix of data}
-
 \item{S}{\eqn{p} by \eqn{p} scatter matrix of the data}
 
 \item{theta}{initial value of the \eqn{p} by \eqn{p} precision matrix}
@@ -46,21 +39,23 @@ ECM_GHS(
 
 \item{savepath}{logical indicator of saving the estimator at each iteration in the ECM algorithm. Only available for p<200}
 
+\item{save_Q}{should the value of the objective function at each step be saved?}
+
+\item{tau_sq}{initial value of squared global shrinkage parameter. If exist_group==T, a dummy value should be provided}
+
+\item{use_ICM}{logical. Should ICM be used instead of ECM? Default value is false}
+
+\item{X}{\eqn{n} by \eqn{p} matrix of data}
+
 \item{exist_group}{logical. Are the variables grouped?}
 
 \item{group}{grouping information.}
 
 \item{N_groups}{If exist_group==T, the number of groups}
 
-\item{save_Q}{should the value of the objective function at each step be saved?}
-
-\item{tau_sq}{initial value of squared global shrinkage parameter. If exist_group==T, a dummy value should be provided}
-
 \item{Tau_sq}{if exist_group==T, an \eqn{ngroup} by \eqn{ngroup} matrix of initial values of the squared global shrinkage parameters within and between groups. If exist_group==F, a dummy value should be provided}
 
 \item{machine_eps}{numerical. The machine precision}
-
-\item{use_ICM}{logical. Should ICM be used instead of ECM? Default value is false}
 }
 \value{
 A List with resulting ECM estimates, and saved path and objective function convergence information if requested

@@ -26,20 +26,23 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
     X[[k]] = as.matrix(X[[k]])
   }
   # Assign initial values, unless provided
+  # Create arrays
   if(is.null(theta)){
-    theta <- list()
+    theta <- array(0,dim=c(p,p,K))
     for(k in 1:K){
-      theta[[k]] <- diag(1,p)
+      theta[,,k] <- diag(1,p)
     }
   }
   else{
+    theta_list = theta
+    theta = array(0,dim=c(p,p,K))
     for(k in 1:K){
-      theta[[k]] = as.matrix(theta[[k]])
-      if(!isSymmetric(theta[[k]])){
-        theta[[k]] = as.matrix(Matrix::forceSymmetric(theta[[k]]))
+      theta[,,k] = as.matrix(theta[[k]])
+      if(!isSymmetric(theta[,,k])){
+        theta[,,k] = as.matrix(Matrix::forceSymmetric(theta[,,k]))
         cat('Initial theta of data set ', k , ' not symmetric, forcing symmetry...\n')
       }
-      if(ncol(theta[[k]])!= p | nrow(theta[[k]])!=p | !matrixcalc::is.positive.definite(theta[[k]]+0)){
+      if(ncol(theta[,,k])!= p | nrow(theta[,,k])!=p | !matrixcalc::is.positive.definite(theta[,,k]+0)){
         cat('Error: initial theta of data set ', k, ' must be pxp and positive definite \n')
         return()
       } 
@@ -47,33 +50,35 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
 
   }
   if(is.null(sigma)){
-    sigma = list()
+    sigma = array(0,dim=c(p,p,K))
     for(k in 1:K){
-      sigma[[k]] <- diag(1,p)
+      sigma[,,k] <- diag(1,p)
     }
   }
   else{
+    sigma_list = sigma
+    sigma = array(0,dim=c(p,p,K))
     for(k in 1:K){
-      if(!isSymmetric(sigma[[k]])){
-        sigma[[k]]=as.matrix(Matrix::forceSymmetric(sigma[[k]]))
+      sigma[,,k] = as.matrix(sigma_list[[k]])
+      if(!isSymmetric(sigma[,,k])){
+        sigma[,,k]=as.matrix(Matrix::forceSymmetric(sigma[,,k]))
         cat('Initial sigma of data set ', k, ' not symmetric, forcing symmetry...\n')
       }
-      if(ncol(sigma[[k]])!= p | nrow(sigma[[k]])!=p | !matrixcalc::is.positive.definite(as.matrix(sigma[[k]]+0))){
+      if(ncol(sigma[,,k])!= p | nrow(sigma[,,k] )!=p | !matrixcalc::is.positive.definite(as.matrix(sigma[,,k]+0))){
         cat('Error: initial sigma of data set ', k, ' must be pxp and positive definite \n')
         return()
       } 
     }
-    
   }
   if(is.null(Lambda_sq)){
-    Lambda_sq = list()
-    for(k in 1:K){
-      Lambda_sq[[k]] <- matrix(rep(1,p^2),ncol=p) 
-    }
+    Lambda_sq = array(1,dim=c(p,p,K))
   }
   else{
+    Lambda_sq_list = Lambda_sq
+    Lambda_sq = array(0,dim=c(p,p,K))
     for(k in 1:K){
-      if(any(Lambda_sq[[k]]<0)){
+      Lambda_sq[,,k] = Lambda_sq_list[[k]]
+      if(any(Lambda_sq[,,k]<0)){
         cat('Error: negative Lambda_sq values are not allowed \n')
         return()
       } 
@@ -82,7 +87,11 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
   }
 
   n.vals <- unlist(lapply(X, nrow))
-  S <- lapply(X, FUN = function(x) t(x) %*% x)
+  S_list <- lapply(X, FUN = function(x) t(x) %*% x)
+  S = array(0,dim=c(p,p,K))
+  for(k in 1:K){
+    S[,,k] = S_list[[k]] 
+  }
   
   if(is.null(tau_sq)){
     tau_sq <- rep(1, K)
@@ -100,10 +109,10 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
   }
 
   if(method=='ECM'){
-    out <- ECM_GHS(X, S, theta , sigma, Lambda_sq, n.vals, p, K, epsilon, verbose, maxitr, savepath, save_Q, tau_sq, use_ICM = FALSE, fix_tau = fix_tau)
+    out <- ECM_GHS(S, theta , sigma, Lambda_sq, n.vals, p, K, epsilon, verbose, maxitr, savepath, save_Q, tau_sq, use_ICM = FALSE, fix_tau = fix_tau)
   }
   else if(method=='ICM'){
-    out <- ECM_GHS(X, S, theta , sigma, Lambda_sq, n.vals, p, K, epsilon, verbose, maxitr, savepath, save_Q, tau_sq, use_ICM = TRUE, fix_tau = fix_tau)
+    out <- ECM_GHS(S, theta , sigma, Lambda_sq, n.vals, p, K, epsilon, verbose, maxitr, savepath, save_Q, tau_sq, use_ICM = TRUE, fix_tau = fix_tau)
   }
   else {
     out <- NULL
@@ -112,7 +121,6 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
   # Save outputs
   out$epsilon = epsilon
   out$maxitr = maxitr
-  out$group = group
   class(out) = "fastGHS"
   return(out)
 }

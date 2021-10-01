@@ -9,5 +9,5 @@ using namespace arma;
 //using namespace Rcpp;
 //using namespace arma;
 
-mat E_Nu(List &Lambda_sq);
+mat E_Nu(arma::cube &Lambda_sq, int M, int K);
 #endif

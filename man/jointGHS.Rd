@@ -15,23 +15,20 @@ jointGHS(
   maxitr = 1e+05,
   verbose = TRUE,
   savepath = FALSE,
-  group = NULL,
   save_Q = F,
-  fix_tau = FALSE,
-  GHS_like = FALSE,
-  stop_underflow = FALSE
+  fix_tau = FALSE
 )
 }
 \arguments{
-\item{X}{\eqn{n} by \eqn{p} matrix of data}
+\item{X}{list of the \eqn{K} observed \eqn{n_k} by \eqn{p} data matrices}
 
-\item{theta}{initial value of the \eqn{p} by \eqn{p} precision matrix}
+\item{theta}{list of the \eqn{K} initial \eqn{p} by \eqn{p} precision matrices. Optional argument}
 
-\item{sigma}{initial value of the \eqn{p} by \eqn{p} covariance matrix}
+\item{sigma}{list of the \eqn{K} initial \eqn{p} by \eqn{p} covariance matrices. Optional argument}
 
-\item{Lambda_sq}{initial value of matrix of squared local shrinkage parameters}
+\item{Lambda_sq}{list of the \eqn{K} initial \eqn{p} by \eqn{p} matrices of squared local shrinkage parameters.}
 
-\item{tau_sq}{initial value of squared global shrinkage parameter. If variables are grouped, a \eqn{ngroup} by \eqn{ngroup} matrix}
+\item{tau_sq}{initial values of squared global shrinkage parameters. A vector of length \eqn{K}}
 
 \item{method}{the method to use. Default is \eqn{ECM}. Other options include \eqn{ICM}}
 
@@ -43,15 +40,9 @@ jointGHS(
 
 \item{savepath}{logical indicator of saving the estimator at each iteration in the ECM algorithm. Only available for p<200}
 
-\item{group}{grouping information, if variables are grouped. If provided, a vector of length \eqn{p} giving the group of each variable as a string, character or number.}
-
 \item{save_Q}{should the value of the objective function at each step be saved?}
 
 \item{fix_tau}{logical. Should tau be fixed?}
-
-\item{GHS_like}{logical. Should the GHS-like penalty be used?}
-
-\item{stop_underflow}{should underflow be avoided by never allowing doubles to be smaller than the machine precision?}
 }
 \value{
 a fitted EMGS object
