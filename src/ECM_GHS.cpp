@@ -40,7 +40,7 @@ using namespace arma;
 //' 
 //' @return A List with resulting ECM estimates, and saved path and objective function convergence information if requested
 //' 
-//' @export
+//'
 // [[Rcpp::export]]
 List ECM_GHS(arma::cube S, arma::cube theta, arma::cube sigma, arma::cube Lambda_sq, arma::vec N, int M, int K, double epsilon, bool verbose, int maxitr, bool savepath, bool save_Q, arma::vec tau_sq, bool use_ICM=false, bool fix_tau = false) {
 
@@ -149,7 +149,7 @@ List ECM_GHS(arma::cube S, arma::cube theta, arma::cube sigma, arma::cube Lambda
   list["S"] = S;
   list["theta"] = theta;  
   list["sigma"] = sigma;
-
+  list["Nu_Inv"] = E_NuInv;
   list["Lambda_sq"] = Lambda_sq;
 
   list["tau_sq"] = tau_sq;
