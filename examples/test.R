@@ -39,8 +39,8 @@ x2.sf.1.scaled = scale(x2.sf.1)
 # Use jointGHS on two identical data sets
 res.joint.1 = jointGHS::jointGHS(list(x.sf.scaled.1, x2.sf.1.scaled), tau_sq=c(10, 10),epsilon = 1e-3, fix_tau=TRUE)
 
-theta1.est.1 <- cov2cor(res.joint.1$theta[,,1])
-theta2.est.1 <- cov2cor(res.joint.1$theta[,,2])
+theta1.est.1 <- cov2cor(res.joint.1$theta[[1]])
+theta2.est.1 <- cov2cor(res.joint.1$theta[[2]])
 theta1.est.1[which(abs(theta1.est.1) < 1e-5, arr.ind = T)] = 0
 tailoredGlasso::sparsity(theta1.est.1!=0)
 # 0.0122449
@@ -124,8 +124,8 @@ data.sf.2.2$sparsity # True sparsity: 0.04
 # Use jointGHS on two unrelated data sets
 res.joint.2 = jointGHS::jointGHS(list(x.sf.scaled.2.1, x.sf.scaled.2.2), tau_sq=c(10, 10),epsilon = 1e-3, fix_tau=TRUE)
 
-theta1.est.2 <- cov2cor(res.joint.2$theta[,,1])
-theta2.est.2 <- cov2cor(res.joint.2$theta[,,2])
+theta1.est.2 <- cov2cor(res.joint.2$theta[[1]])
+theta2.est.2 <- cov2cor(res.joint.2$theta[[2]])
 theta1.est.2[which(abs(theta1.est.2) < 1e-5, arr.ind = T)] = 0
 tailoredGlasso::sparsity(theta1.est.2!=0)
 # 0.006530612
@@ -199,8 +199,8 @@ x.sf.scaled.3.2 = scale(mvtnorm::rmvnorm(n.3.2, sigma = solve(graph.3.2$prec.mat
 # Use jointGHS on two unrelated data sets
 res.joint.3 = jointGHS::jointGHS(list(x.sf.scaled.3.1, x.sf.scaled.3.2), tau_sq=c(10, 10),epsilon = 1e-3, fix_tau=TRUE)
 
-theta1.est.3 <- cov2cor(res.joint.3$theta[,,1])
-theta2.est.3 <- cov2cor(res.joint.3$theta[,,2])
+theta1.est.3 <- cov2cor(res.joint.3$theta[[1]])
+theta2.est.3 <- cov2cor(res.joint.3$theta[[2]])
 theta1.est.3[which(abs(theta1.est.3) < 1e-5, arr.ind = T)] = 0
 tailoredGlasso::sparsity(theta1.est.3!=0)
 # 0.01061224

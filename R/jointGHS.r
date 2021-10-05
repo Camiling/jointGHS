@@ -17,7 +17,7 @@
 #' @return a fitted EMGS object
 #' @export 
 #' 
-jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, method= 'ECM',epsilon = 1e-5, maxitr = 1e5, verbose=TRUE, savepath = FALSE, save_Q = F, fix_tau = FALSE){
+jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, method= 'ECM',epsilon = 1e-5, maxitr = 1e5, verbose=TRUE, savepath = FALSE, save_Q = FALSE, fix_tau = TRUE){
 
   p <- dim(X[[1]])[2]
   K <- length(X)
@@ -118,6 +118,23 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
     out <- NULL
   }
   
+  # Make lists for the output
+  
+  S_list =  out$S
+  theta_list =  out$theta
+  sigma_list =  out$sigma
+  Lambda_sq_list = out$Lambda_sq
+  out$S = list()
+  out$theta = list()
+  out$sigma = list()
+  out$Lambda_sq = list()
+  for (k in 1:K){
+    out$S[[k]] = S_list[,,k]
+    out$theta[[k]] = theta_list[,,k]
+    out$sigma[[k]] = sigma_list[,,k]
+    out$Lambda_sq[[k]] = Lambda_sq_list[,,k]
+  }
+
   # Save outputs
   out$epsilon = epsilon
   out$maxitr = maxitr
