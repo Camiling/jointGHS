@@ -246,9 +246,6 @@ tailoredGlasso::recall(as.matrix(theta.true.3.2!=0), theta.est.ecmghs.3.2!=0)
 
 
 
-res.joint.3.2 = jointGHS::jointGHS(list(x.sf.scaled.3.1, x.sf.scaled.3.2), tau_sq=c(1000, 1000),epsilon = 1e-3, fix_tau=TRUE)
-res.joint.3.2$epsilon
-
 
 
 
