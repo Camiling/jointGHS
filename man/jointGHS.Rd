@@ -15,8 +15,8 @@ jointGHS(
   maxitr = 1e+05,
   verbose = TRUE,
   savepath = FALSE,
-  save_Q = F,
-  fix_tau = FALSE
+  save_Q = FALSE,
+  fix_tau = TRUE
 )
 }
 \arguments{

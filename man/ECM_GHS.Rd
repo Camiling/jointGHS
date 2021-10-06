@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{ECM_GHS}
 \alias{ECM_GHS}
-\title{Perform GHS with ECM}
+\title{Perform jointGHS with ECM}
 \usage{
 ECM_GHS(
   S,
@@ -19,17 +19,23 @@ ECM_GHS(
   save_Q,
   tau_sq,
   use_ICM = FALSE,
-  fix_tau = FALSE
+  fix_tau = TRUE
 )
 }
 \arguments{
-\item{S}{\eqn{p} by \eqn{p} scatter matrix of the data}
+\item{S}{cube of the \eqn{p} by \eqn{p} scatter matrices of the \eqn{K} data sets}
 
-\item{theta}{initial value of the \eqn{p} by \eqn{p} precision matrix}
+\item{theta}{cube of the \eqn{K} initial \eqn{p} by \eqn{p} precision matrices}
 
-\item{sigma}{initial value of the \eqn{p} by \eqn{p} covariance matrix}
+\item{sigma}{cube of the \eqn{K} initial \eqn{p} by \eqn{p} covariance matrices}
 
-\item{Lambda_sq}{initial value of matrix of squared local shrinkage parameters}
+\item{Lambda_sq}{cube of the \eqn{K} initial \eqn{p} by \eqn{p} matrices of squared local shrinkage parameters}
+
+\item{N}{vector of length \eqn{K} of the number of obervations in each data set.}
+
+\item{M}{the number of variables/nodes. Integer}
+
+\item{K}{the number of networks. Integer}
 
 \item{epsilon}{tolerance for the convergence assessment}
 
@@ -41,25 +47,15 @@ ECM_GHS(
 
 \item{save_Q}{should the value of the objective function at each step be saved?}
 
-\item{tau_sq}{initial value of squared global shrinkage parameter. If exist_group==T, a dummy value should be provided}
+\item{tau_sq}{vector of initial values of the \eqn{K} squared global shrinkage parameters}
 
 \item{use_ICM}{logical. Should ICM be used instead of ECM? Default value is false}
 
-\item{X}{\eqn{n} by \eqn{p} matrix of data}
-
-\item{exist_group}{logical. Are the variables grouped?}
-
-\item{group}{grouping information.}
-
-\item{N_groups}{If exist_group==T, the number of groups}
-
-\item{Tau_sq}{if exist_group==T, an \eqn{ngroup} by \eqn{ngroup} matrix of initial values of the squared global shrinkage parameters within and between groups. If exist_group==F, a dummy value should be provided}
-
-\item{machine_eps}{numerical. The machine precision}
+\item{fix_tau}{logical. Should tau be fixed?}
 }
 \value{
 A List with resulting ECM estimates, and saved path and objective function convergence information if requested
 }
 \description{
-This function performs expectation-conditional-maximation or iterated conditional mode estimation for the graphical horseshoe
+This function performs expectation-conditional-maximation or iterated conditional mode estimation for the joint graphical horseshoe
 }

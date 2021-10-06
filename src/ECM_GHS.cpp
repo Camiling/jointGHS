@@ -16,30 +16,29 @@ using namespace arma;
 
 
 
-//' Perform GHS with ECM
+//' Perform jointGHS with ECM
 //' 
-//' This function performs expectation-conditional-maximation or iterated conditional mode estimation for the graphical horseshoe
+//' This function performs expectation-conditional-maximation or iterated conditional mode estimation for the joint graphical horseshoe
 //' 
-//' @param X \eqn{n} by \eqn{p} matrix of data
-//' @param S \eqn{p} by \eqn{p} scatter matrix of the data
-//' @param theta initial value of the \eqn{p} by \eqn{p} precision matrix
-//' @param sigma initial value of the \eqn{p} by \eqn{p} covariance matrix
-//' @param Lambda_sq initial value of matrix of squared local shrinkage parameters
+//' @param S cube of the \eqn{p} by \eqn{p} scatter matrices of the \eqn{K} data sets
+//' @param theta cube of the \eqn{K} initial \eqn{p} by \eqn{p} precision matrices
+//' @param sigma cube of the \eqn{K} initial \eqn{p} by \eqn{p} covariance matrices
+//' @param Lambda_sq cube of the \eqn{K} initial \eqn{p} by \eqn{p} matrices of squared local shrinkage parameters
+//' @param N vector of length \eqn{K} of the number of obervations in each data set. 
+//' @param M the number of variables/nodes. Integer
+//' @param K the number of networks. Integer
 //' @param epsilon tolerance for the convergence assessment
 //' @param verbose logical indicator of printing information at each iteration
 //' @param maxitr maximum number of iterations
 //' @param savepath logical indicator of saving the estimator at each iteration in the ECM algorithm. Only available for p<200
-//' @param exist_group logical. Are the variables grouped?
-//' @param group grouping information.
-//' @param N_groups If exist_group==T, the number of groups
 //' @param save_Q should the value of the objective function at each step be saved?
-//' @param tau_sq initial value of squared global shrinkage parameter. If exist_group==T, a dummy value should be provided
-//' @param Tau_sq if exist_group==T, an \eqn{ngroup} by \eqn{ngroup} matrix of initial values of the squared global shrinkage parameters within and between groups. If exist_group==F, a dummy value should be provided
-//' @param machine_eps numerical. The machine precision
+//' @param tau_sq vector of initial values of the \eqn{K} squared global shrinkage parameters
 //' @param use_ICM logical. Should ICM be used instead of ECM? Default value is false
+//' @param fix_tau logical. Should tau be fixed?
 //' 
 //' @return A List with resulting ECM estimates, and saved path and objective function convergence information if requested
 //' 
+//' @export
 //'
 // [[Rcpp::export]]
 List ECM_GHS(arma::cube S, arma::cube theta, arma::cube sigma, arma::cube Lambda_sq, arma::vec N, int M, int K, double epsilon, bool verbose, int maxitr, bool savepath, bool save_Q, arma::vec tau_sq, bool use_ICM=false, bool fix_tau = true) {
