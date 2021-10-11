@@ -3,6 +3,8 @@ library(huge)
 library(glasso)
 library(igraph)
 library(fastGHS)
+library(ggplot2)
+library(gridExtra)
 source('examples/help_functions.R')
 
 # Explore the performance of jointGHS compared to the single-network version in different settings
@@ -203,7 +205,7 @@ tailoredGlasso::sparsity(theta.true.3.2!=0)
 x.sf.scaled.3.2 = scale(mvtnorm::rmvnorm(n.3.2, sigma = solve(graph.3.2$prec.mat)))
 
 # Use jointGHS on two slightly related data sets
-res.joint.3 = jointGHS::jointGHS(list(x.sf.scaled.3.1, x.sf.scaled.3.2), tau_sq=c(10, 10),epsilon = 1e-3, fix_tau=TRUE)
+res.joint.3 = jointGHS::jointGHS(list(x.sf.scaled.3.1, x.sf.scaled.3.2), tau_sq=c(1e-4, 1e-4),epsilon = 1e-3, fix_tau=TRUE)
 
 theta1.est.3 <- cov2cor(res.joint.3$theta[[1]])
 theta2.est.3 <- cov2cor(res.joint.3$theta[[2]])
@@ -525,6 +527,114 @@ unlist(lapply(1:3, FUN = function(k) tailoredGlasso::recall(theta.true.list.5.2[
 # Ten-network version: 0.2323232 0.2222222 0.2626263
 
 # As we see, using more networks with jointGHS gives better results for all networks, expect wrt the precision of network 4 (as it is much sparser in the three-network version.). 
+
+
+
+
+# EXAMPLE 6: look at how the sparsity changes with tau  ------------------------------------------------------------------
+
+# 20% edge disagreement in the underlying edges
+
+# First network: n=100, p=50, larger partial correlations (0.229)
+n.6.1=100
+p.6.1=50
+set.seed(12345)
+data.sf.6.1= huge::huge.generator(n=n.6.1, d=p.6.1,graph = 'scale-free',v=0.5,u=0.05) 
+g.true.sf.6.1 = data.sf.6.1$theta # True adjacency matrix
+theta.true.6.1 = data.sf.6.1$omega # The precision matrix
+theta.true.6.1[which(theta.true.6.1<10e-5,arr.ind=T)]=0  
+g.sf.6.1=graph.adjacency(data.sf.6.1$theta,mode="undirected",diag=F) # true igraph object
+x.sf.6.1 = data.sf.6.1$data # Observed attributes. nxp matrix.
+x.sf.scaled.6.1= scale(x.sf.6.1) # Scale columns/variables.
+s.sf.scaled.6.1 = cov(x.sf.scaled.6.1) # Empirical covariance matrix
+data.sf.6.1$sparsity # True sparsity: 0.04
+
+# Generate second data set with same sparsity
+# n=200, p=50, 20% edge disagreement
+n.6.2=200
+p.6.2=50
+set.seed(123456)
+graph.6.2 = mutate.graph(data.sf.6.1, 0.2)
+theta.true.6.2 = graph.6.2$prec.mat
+tailoredGlasso::sparsity(theta.true.6.2!=0)
+# 0.04
+x.sf.scaled.6.2 = scale(mvtnorm::rmvnorm(n.6.2, sigma = solve(graph.6.2$prec.mat)))
+
+# Use jointGHS on two slightly related data sets, with various tau values
+
+tau.vals.6 = seq(1e-5, 10, by = 0.001)
+res.joint.6 = lapply(tau.vals.6, FUN = function(t) jointGHS::jointGHS(list(x.sf.scaled.6.1, x.sf.scaled.6.2), tau_sq=c(t, t),epsilon = 1e-3, fix_tau=TRUE))
+thetas.est.6.1 = lapply(res.joint.6, FUN = function(s) cov2cor(s$theta[[1]]))
+thetas.est.6.2 = lapply(res.joint.6, FUN = function(s) cov2cor(s$theta[[2]]))
+for(i in 1:length(tau.vals.6)){
+  thetas.est.6.1[[i]][which(abs(thetas.est.6.1[[i]]) < 1e-5, arr.ind = T)] = 0
+  thetas.est.6.2[[i]][which(abs(thetas.est.6.2[[i]]) < 1e-5, arr.ind = T)] = 0
+}
+# Sparsities
+spars.6.1 = unlist(lapply(thetas.est.6.1, FUN = function(s) tailoredGlasso::sparsity(s!=0)))
+spars.6.2 = unlist(lapply(thetas.est.6.2, FUN = function(s) tailoredGlasso::sparsity(s!=0)))
+
+data.6.1 = data.frame(tau=tau.vals.6, sparsity=spars.6.1)
+data.6.2 = data.frame(tau=tau.vals.6, sparsity=spars.6.2)
+p1 <- ggplot2::ggplot(data.6.1, aes(x=tau,y=sparsity))+ geom_point(color='steelblue')+ labs(title="Graph 1")+theme(plot.title = element_text(hjust = 0.5))
+p2 <- ggplot2::ggplot(data.6.2, aes(x=tau,y=sparsity))+ geom_point(color='steelblue')+ labs(title="Graph 2")+theme(plot.title = element_text(hjust = 0.5))
+
+pdf('examples/sparsity_vs_tau.pdf')
+gridExtra::grid.arrange(p1, p2, nrow=1)
+dev.off()
+
+# As we see, the sparsity stabilized very quickly. Must look at smaller values of tau (<0.005). 
+
+# Try grid of smaller tau values
+
+tau.vals.6.2 = seq(1e-6, 2e-3, by = 1e-6)
+res.joint.6.2 = lapply(tau.vals.6.2, FUN = function(t) jointGHS::jointGHS(list(x.sf.scaled.6.1, x.sf.scaled.6.2), tau_sq=c(t, t),epsilon = 1e-3, fix_tau=TRUE))
+thetas.est.6.1.2 = lapply(res.joint.6.2, FUN = function(s) cov2cor(s$theta[[1]]))
+thetas.est.6.2.2 = lapply(res.joint.6.2, FUN = function(s) cov2cor(s$theta[[2]]))
+for(i in 1:length(tau.vals.6.2)){
+  thetas.est.6.1.2[[i]][which(abs(thetas.est.6.1.2[[i]]) < 1e-5, arr.ind = T)] = 0
+  thetas.est.6.2.2[[i]][which(abs(thetas.est.6.2.2[[i]]) < 1e-5, arr.ind = T)] = 0
+}
+# Sparsities
+spars.6.1.2 = unlist(lapply(thetas.est.6.1.2, FUN = function(s) tailoredGlasso::sparsity(s!=0)))
+spars.6.2.2 = unlist(lapply(thetas.est.6.2.2, FUN = function(s) tailoredGlasso::sparsity(s!=0)))
+
+# Precisions 
+prec.6.1.2 = unlist(lapply(thetas.est.6.1.2, FUN = function(s) tailoredGlasso::precision(theta.true.6.1!=0, s!=0)))
+prec.6.2.2 = unlist(lapply(thetas.est.6.2.2, FUN = function(s) tailoredGlasso::precision(theta.true.6.2!=0, s!=0)))
+
+# Recalls 
+rec.6.1.2 = unlist(lapply(thetas.est.6.1.2, FUN = function(s) tailoredGlasso::recall(theta.true.6.1!=0, s!=0)))
+rec.6.2.2 = unlist(lapply(thetas.est.6.2.2, FUN = function(s) tailoredGlasso::recall(theta.true.6.2!=0, s!=0)))
+
+data.6.1.2 = data.frame(tau=tau.vals.6.2, sparsity=spars.6.1.2)
+data.6.2.2 = data.frame(tau=tau.vals.6.2, sparsity=spars.6.2.2)
+p1 <- ggplot2::ggplot(data.6.1.2, aes(x=tau,y=sparsity))+ geom_point(color='steelblue')+ labs(title="Graph 1")+theme(plot.title = element_text(hjust = 0.5))
+p2 <- ggplot2::ggplot(data.6.2.2, aes(x=tau,y=sparsity))+ geom_point(color='steelblue')+ labs(title="Graph 2")+theme(plot.title = element_text(hjust = 0.5))
+
+data.prec.6.1.2 = data.frame(tau=tau.vals.6.2, precision=prec.6.1.2)
+data.prec.6.2.2 = data.frame(tau=tau.vals.6.2, precision=prec.6.2.2)
+p1.prec <- ggplot2::ggplot(data.prec.6.1.2, aes(x=tau,y=precision))+ geom_point(color='steelblue')+labs(title="Graph 1")+theme(plot.title = element_text(hjust = 0.5))
+p2.prec <- ggplot2::ggplot(data.prec.6.2.2, aes(x=tau,y=precision))+ geom_point(color='steelblue')+labs(title="Graph 2")+theme(plot.title = element_text(hjust = 0.5))
+
+data.rec.6.1.2 = data.frame(tau=tau.vals.6.2, recall=rec.6.1.2)
+data.rec.6.2.2 = data.frame(tau=tau.vals.6.2, recall=rec.6.2.2)
+p1.rec <- ggplot2::ggplot(data.rec.6.1.2, aes(x=tau,y=recall))+ geom_point(color='steelblue')+labs(title="Graph 1")+theme(plot.title = element_text(hjust = 0.5))
+p2.rec <- ggplot2::ggplot(data.rec.6.2.2, aes(x=tau,y=recall))+ geom_point(color='steelblue')+labs(title="Graph 2")+theme(plot.title = element_text(hjust = 0.5))
+
+# Plot sparsity as a function of tau
+
+pdf('examples/sparsity_vs_tau_smallergrid.pdf')
+gridExtra::grid.arrange(p1, p2, nrow=1)
+dev.off()
+
+
+# Plot sparsity, precision and recall as functions of tau
+
+pdf('examples/measures_vs_tau.pdf', 10, 10)
+gridExtra::grid.arrange(p1, p2, p1.prec, p2.prec, p1.rec, p2.rec,nrow=3)
+dev.off()
+
 
 
 
