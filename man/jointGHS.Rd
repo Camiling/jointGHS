@@ -13,6 +13,7 @@ jointGHS(
   method = "ECM",
   epsilon = 1e-05,
   maxitr = 1e+05,
+  scale = FALSE,
   verbose = TRUE,
   savepath = FALSE,
   save_Q = FALSE,
@@ -26,15 +27,17 @@ jointGHS(
 
 \item{sigma}{list of the \eqn{K} initial \eqn{p} by \eqn{p} covariance matrices. Optional argument}
 
-\item{Lambda_sq}{list of the \eqn{K} initial \eqn{p} by \eqn{p} matrices of squared local shrinkage parameters.}
+\item{Lambda_sq}{list of the \eqn{K} initial \eqn{p} by \eqn{p} matrices of squared local shrinkage parameters. Optional argument}
 
-\item{tau_sq}{initial values of squared global shrinkage parameters. A vector of length \eqn{K}}
+\item{tau_sq}{initial values of squared global shrinkage parameters. A vector of length \eqn{K}, or a single value to be used for all networks}
 
 \item{method}{the method to use. Default is \eqn{ECM}. Other options include \eqn{ICM}}
 
 \item{epsilon}{tolerance for the convergence assessment}
 
 \item{maxitr}{maximum number of iterations}
+
+\item{scale}{should variables be scaled?}
 
 \item{verbose}{logical indicator of printing information at each iteration}
 

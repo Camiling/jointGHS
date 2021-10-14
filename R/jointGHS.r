@@ -5,11 +5,12 @@
 #' @param X list of the \eqn{K} observed \eqn{n_k} by \eqn{p} data matrices
 #' @param theta list of the \eqn{K} initial \eqn{p} by \eqn{p} precision matrices. Optional argument
 #' @param sigma list of the \eqn{K} initial \eqn{p} by \eqn{p} covariance matrices. Optional argument
-#' @param Lambda_sq list of the \eqn{K} initial \eqn{p} by \eqn{p} matrices of squared local shrinkage parameters.
-#' @param tau_sq initial values of squared global shrinkage parameters. A vector of length \eqn{K}
+#' @param Lambda_sq list of the \eqn{K} initial \eqn{p} by \eqn{p} matrices of squared local shrinkage parameters. Optional argument
+#' @param tau_sq initial values of squared global shrinkage parameters. A vector of length \eqn{K}, or a single value to be used for all networks
 #' @param method the method to use. Default is \eqn{ECM}. Other options include \eqn{ICM}
 #' @param epsilon tolerance for the convergence assessment
 #' @param maxitr maximum number of iterations
+#' @param scale should variables be scaled?
 #' @param verbose logical indicator of printing information at each iteration
 #' @param savepath logical indicator of saving the estimator at each iteration in the ECM algorithm. Only available for p<200
 #' @param save_Q should the value of the objective function at each step be saved?
@@ -17,13 +18,16 @@
 #' @return a fitted EMGS object
 #' @export 
 #' 
-jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, method= 'ECM',epsilon = 1e-5, maxitr = 1e5, verbose=TRUE, savepath = FALSE, save_Q = FALSE, fix_tau = TRUE){
+jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, method= 'ECM',epsilon = 1e-5, maxitr = 1e5, scale=FALSE, verbose=TRUE, savepath = FALSE, save_Q = FALSE, fix_tau = TRUE){
 
   p <- dim(X[[1]])[2]
   K <- length(X)
   
   for(k in 1:K){
     X[[k]] = as.matrix(X[[k]])
+    if(scale){
+      X[[k]] = scale(X[[k]])
+    }
   }
   # Assign initial values, unless provided
   # Create arrays
@@ -97,7 +101,10 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
     tau_sq <- rep(1, K)
   }
   else{
-    if(length(tau_sq)!=K){
+    if(length(tau_sq)==1){
+      tau_sq = rep(tau_sq, K)
+    }
+    else if(length(tau_sq)!=K){
       cat('Error: number of tau_sq values must match number of networks \n')
       return()
     }
