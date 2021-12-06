@@ -5,6 +5,7 @@ library(igraph)
 library(fastGHS)
 library(ggplot2)
 library(gridExtra)
+library(foreach)
 source('examples/help_functions.R')
 
 # Explore the performance of jointGHS compared to the single-network version in different settings

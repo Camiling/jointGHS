@@ -8,6 +8,10 @@
 #' @param Lambda_sq list of the \eqn{K} initial \eqn{p} by \eqn{p} matrices of squared local shrinkage parameters. Optional argument
 #' @param tau_sq initial values of squared global shrinkage parameters. A vector of length \eqn{K}, or a single value to be used for all networks
 #' @param method the method to use. Default is \eqn{ECM}. Other options include \eqn{ICM}
+#' @param AIC_selection logical. Should the global shrinkage parameters be selected with AIC?
+#' @param AIC_eps if AIC_selection == TRUE, the convergence tolerance for the AIC convergence assessment
+#' @param tau_sq_min if AIC_selection == TRUE, the smallest value of tau_sq to consider  
+#' @param tau_sq_stepsize if AIC_selection == TRUE, the step-size to use in the grid for tau_sq. Optional argument
 #' @param epsilon tolerance for the convergence assessment
 #' @param maxitr maximum number of iterations
 #' @param scale should variables be scaled?
@@ -16,10 +20,27 @@
 #' @param save_Q should the value of the objective function at each step be saved?
 #' @param fix_tau logical. Should tau be fixed?
 #' @return a fitted EMGS object
+#' 
+#' @importFrom foreach %dopar%
+#' 
 #' @export 
 #' 
-jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, method= 'ECM',epsilon = 1e-5, maxitr = 1e5, scale=FALSE, verbose=TRUE, savepath = FALSE, save_Q = FALSE, fix_tau = TRUE){
+jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, method= 'ECM', AIC_selection=TRUE, AIC_eps = 1e-1, tau_sq_min =1e-3, tau_sq_stepsize= NULL,
+                     epsilon = 1e-5, maxitr = 1e3, scale=FALSE, verbose=TRUE, savepath = FALSE, save_Q = FALSE, fix_tau = FALSE){
 
+  # If only one data set is provided, single-network version is used instead.
+  if(!is.list(X)){
+    if(is.list(theta) | is.list(sigma) | is.list(Lambda_sq) | length(tau_sq)!=1){
+      stop('Cannot provide several starting values for single network analysis.')
+    }
+    # All other checks are performed within fastGHS
+    cat('Single data set provided: performing single-network ECM for GHS \n')
+    out <- fastGHS::fastGHS(X, theta=theta, sigma=sigma, Lambda_sq = Lambda_sq, tau_sq = tau_sq, method = method, 
+                            epsilon = epsilon, maxitr = maxitr, verbose = verbose, savepath=savepath,save_Q=save_Q, fix_tau = fix_tau)
+    class(out) = "jointGHS"
+    return(out)
+  }
+  
   p <- dim(X[[1]])[2]
   K <- length(X)
   
@@ -47,8 +68,7 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
         cat('Initial theta of data set ', k , ' not symmetric, forcing symmetry...\n')
       }
       if(ncol(theta[,,k])!= p | nrow(theta[,,k])!=p | !matrixcalc::is.positive.definite(theta[,,k]+0)){
-        cat('Error: initial theta of data set ', k, ' must be pxp and positive definite \n')
-        return()
+        stop('Initial theta of data set ', k, ' must be pxp and positive definite \n')
       } 
     }
 
@@ -69,8 +89,7 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
         cat('Initial sigma of data set ', k, ' not symmetric, forcing symmetry...\n')
       }
       if(ncol(sigma[,,k])!= p | nrow(sigma[,,k] )!=p | !matrixcalc::is.positive.definite(as.matrix(sigma[,,k]+0))){
-        cat('Error: initial sigma of data set ', k, ' must be pxp and positive definite \n')
-        return()
+        stop('Initial sigma of data set ', k, ' must be pxp and positive definite \n')
       } 
     }
   }
@@ -83,8 +102,7 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
     for(k in 1:K){
       Lambda_sq[,,k] = Lambda_sq_list[[k]]
       if(any(Lambda_sq[,,k]<0)){
-        cat('Error: negative Lambda_sq values are not allowed \n')
-        return()
+        stop('Negative Lambda_sq values are not allowed \n')
       } 
     }
 
@@ -105,26 +123,47 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
       tau_sq = rep(tau_sq, K)
     }
     else if(length(tau_sq)!=K){
-      cat('Error: number of tau_sq values must match number of networks \n')
-      return()
+      stop('Number of tau_sq values must match number of networks, or a single value must be provided for all. \n')
     }
        
     if(any(tau_sq<0)){
-      cat('Error: negative tau_sq is not allowed \n')
-      return()
+      stop('Negative tau_sq is not allowed \n')
     }
   }
-
-  if(method=='ECM'){
-    out <- ECM_GHS(S, theta , sigma, Lambda_sq, n.vals, p, K, epsilon, verbose, maxitr, savepath, save_Q, tau_sq, use_ICM = FALSE, fix_tau = fix_tau)
+  
+  if(!method %in% c('ECM', 'ICM') ){
+    stop('Method must be either ECM or ICM')
   }
-  else if(method=='ICM'){
-    out <- ECM_GHS(S, theta , sigma, Lambda_sq, n.vals, p, K, epsilon, verbose, maxitr, savepath, save_Q, tau_sq, use_ICM = TRUE, fix_tau = fix_tau)
-  }
-  else {
-    out <- NULL
+  use_ICM = method=='ICM'
+  
+  # Select tau for each network using AIC crieria
+  if(AIC_selection){
+    doParallel::registerDoParallel(K)
+    res.list = foreach (k=1:K) %dopar% {
+      fastGHS::fastGHS(X[[k]], theta=theta[,,k], sigma=sigma[,,k], Lambda_sq = Lambda_sq[,,k], tau_sq = tau_sq[k], method = method, 
+                       AIC_selection=AIC_selection, AIC_eps = AIC_eps, tau_sq_min =tau_sq_min, tau_sq_stepsize= tau_sq_stepsize,
+                       epsilon = epsilon, maxitr = maxitr, verbose = F);
+    }
+    foreach::registerDoSEQ()
+    # New tau_sq values
+    tau_sq = unlist(lapply(res.list, FUN = function(s) s$tau_sq))
+    # List of vectors of AIC score trajectories
+    AIC_scores = lapply(res.list, FUN = function(s) s$AIC_scores)
+    # Save single-network output
+    Lambda_sq_single = lapply(res.list, FUN = function(s) s$Lambda_sq)
+    theta_single = lapply(res.list, FUN = function(s) s$theta)
+    sigma_single = lapply(res.list, FUN = function(s) s$sigma)
+    tau_sq_vals = lapply(res.list, FUN = function(s) s$tau_sq_vals)[[1]] # Same for all networks, so choose the first one.
+    # Use output to initialise 
+    theta = array(unlist(theta_single), c(p,p,K))
+    Lambda_sq = array(unlist(Lambda_sq_single), c(p,p,K))
+    sigma = array(unlist(sigma_single), c(p,p,K))
+    
   }
   
+  # Perform joint analysis
+  out <- ECM_GHS(S, theta, sigma, Lambda_sq, n.vals, p, K, epsilon, verbose, maxitr, savepath, save_Q, tau_sq, use_ICM = use_ICM, fix_tau = fix_tau)
+
   # Make lists for the output
   
   S_list =  out$S
@@ -141,10 +180,18 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
     out$sigma[[k]] = sigma_list[,,k]
     out$Lambda_sq[[k]] = Lambda_sq_list[,,k]
   }
+  if(AIC_selection){
+    out$Lambda_sq_single = Lambda_sq_single
+    out$theta_single = theta_single
+    out$sigma_single = sigma_single
+    out$AIC_scores = AIC_scores
+    out$tau_sq_vals = tau_sq_vals
+  }
 
   # Save outputs
+  out$tau_sq = tau_sq
   out$epsilon = epsilon
   out$maxitr = maxitr
-  class(out) = "fastGHS"
+  class(out) = "jointGHS"
   return(out)
 }
