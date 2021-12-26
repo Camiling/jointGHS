@@ -153,7 +153,7 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
     Lambda_sq_single = lapply(res.list, FUN = function(s) s$Lambda_sq)
     theta_single = lapply(res.list, FUN = function(s) s$theta)
     sigma_single = lapply(res.list, FUN = function(s) s$sigma)
-    tau_sq_vals = lapply(res.list, FUN = function(s) s$tau_sq_vals)[[1]] # Same for all networks, so choose the first one.
+    tau_sq_vals = lapply(res.list, FUN = function(s) s$tau_sq_vals)
     # Use output to initialise 
     theta = array(unlist(theta_single), c(p,p,K))
     Lambda_sq = array(unlist(Lambda_sq_single), c(p,p,K))
@@ -162,6 +162,7 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
   }
   
   # Perform joint analysis
+  if(AIC_selection) fix_tau = T
   out <- ECM_GHS(S, theta, sigma, Lambda_sq, n.vals, p, K, epsilon, verbose, maxitr, savepath, save_Q, tau_sq, use_ICM = use_ICM, fix_tau = fix_tau)
 
   # Make lists for the output
