@@ -8,14 +8,20 @@ Authors@R:
 Description: Compute the posterior modes in the joint graphical horseshoe for multiple networks with shared information using a fast ECM algorithm.
 License: GPL-3 + file LICENSE
 Encoding: UTF-8
-RoxygenNote: 7.1.1
-Depends: R (>= 3.0.0)
+RoxygenNote: 7.1.2
+Depends: R (>= 3.5.0)
 Imports: Rcpp (>= 1.0.6), 
   RcppArmadillo, 
   matrixcalc, 
   Matrix, 
   doParallel, 
   foreach, 
-  parallel
+  parallel,
+  gtools,
+  ggplot2,
+  gridExtra, 
+  network,
+  igraph, 
+  GGally
 LinkingTo: Rcpp, 
   RcppArmadillo

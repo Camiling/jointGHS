@@ -17,11 +17,14 @@ jointGHS(
   tau_sq_stepsize = NULL,
   epsilon = 1e-05,
   maxitr = 1000,
-  scale = FALSE,
+  scale = TRUE,
   verbose = TRUE,
   savepath = FALSE,
   save_Q = FALSE,
-  fix_tau = FALSE
+  fix_tau = FALSE,
+  boot_check = FALSE,
+  B = 100,
+  nCores = 5
 )
 }
 \arguments{
@@ -33,35 +36,44 @@ jointGHS(
 
 \item{Lambda_sq}{list of the \eqn{K} initial \eqn{p} by \eqn{p} matrices of squared local shrinkage parameters. Optional argument}
 
-\item{tau_sq}{initial values of squared global shrinkage parameters. A vector of length \eqn{K}, or a single value to be used for all networks}
+\item{tau_sq}{initial values of squared global shrinkage parameters. A vector of length \eqn{K}, or a single value to be used for all networks.}
 
-\item{method}{the method to use. Default is \eqn{ECM}. Other options include \eqn{ICM}}
+\item{method}{the method to use. Default is \code{ECM}. Other options include \code{ICM}}
 
-\item{AIC_selection}{logical. Should the global shrinkage parameters be selected with AIC?}
+\item{AIC_selection}{logical. Should the global shrinkage parameters be selected with AIC? Default \code{TRUE}}
 
-\item{AIC_eps}{if AIC_selection == TRUE, the convergence tolerance for the AIC convergence assessment}
+\item{AIC_eps}{if \code{AIC_selection=TRUE}, the tolerance for the AIC convergence assessment}
 
-\item{tau_sq_min}{if AIC_selection == TRUE, the smallest value of tau_sq to consider}
+\item{tau_sq_min}{if \code{AIC_selection=TRUE}, the smallest value of \code{tau_sq} to consider}
 
-\item{tau_sq_stepsize}{if AIC_selection == TRUE, the step-size to use in the grid for tau_sq. Optional argument}
+\item{tau_sq_stepsize}{if \code{AIC_selection=TRUE}, the step-size to use in the grid for \code{tau_sq}. Optional argument}
 
 \item{epsilon}{tolerance for the convergence assessment}
 
 \item{maxitr}{maximum number of iterations}
 
-\item{scale}{should variables be scaled?}
+\item{scale}{should variables be scaled? Default \code{TRUE}}
 
 \item{verbose}{logical indicator of printing information at each iteration}
 
-\item{savepath}{logical indicator of saving the estimator at each iteration in the ECM algorithm. Only available for p<200}
+\item{savepath}{logical indicator of saving the estimator at each iteration in the ECM algorithm. Only available for \eqn{p<200}}
 
 \item{save_Q}{should the value of the objective function at each step be saved?}
 
-\item{fix_tau}{logical. Should tau be fixed?}
+\item{fix_tau}{logical. Should \code{tau_sq} be fixed? Default \code{FALSE}}
+
+\item{boot_check}{should bootstrapping be performed to check the joint results?}
+
+\item{B}{if \code{boot_check=TRUE}, the number of bootstrap samples to draw}
+
+\item{nCores}{if \code{boot_check=TRUE}, how many cores should be used for the bootstrap sampling?}
 }
 \value{
-a fitted EMGS object
+a fitted jointGHS object
 }
 \description{
 This function performs expectation-conditional-maximation or iterated conditional mode estimation for the joint graphical horseshoe
+}
+\seealso{
+\code{\link{plot.jointGHS}}, \code{\link{print.jointGHS}}
 }
