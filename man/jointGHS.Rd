@@ -69,7 +69,7 @@ jointGHS(
 \item{nCores}{if \code{boot_check=TRUE}, how many cores should be used for the bootstrap sampling?}
 }
 \value{
-a fitted jointGHS object
+a fitted \code{jointGHS} object
 }
 \description{
 This function performs expectation-conditional-maximation or iterated conditional mode estimation for the joint graphical horseshoe

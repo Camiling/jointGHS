@@ -23,7 +23,7 @@
 #' @param B if \code{boot_check=TRUE}, the number of bootstrap samples to draw
 #' @param nCores if \code{boot_check=TRUE}, how many cores should be used for the bootstrap sampling?
 #' 
-#' @return a fitted jointGHS object
+#' @return a fitted \code{jointGHS} object
 #' 
 #' @importFrom foreach %dopar%
 #' 
@@ -224,7 +224,7 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
 boot_and_joint_parallel_iteration = function(X, S, n.vals, p, K, theta, sigma, Lambda_sq, tau_sq, method, use_ICM, tau_sq_min, tau_sq_stepsize, 
                                              epsilon, maxitr, AIC_eps, perform_boot) {
   if(perform_boot==1){
-    # Use Bayesian booystrap with weights sampled from the Dirichlet distribution
+    # Use Bayesian bootstrap with weights sampled from the Dirichlet distribution
     res = lapply(1:K, FUN = function(k) fastGHS::fastGHS(X[[k]], theta=theta[,,k], sigma=sigma[,,k], Lambda_sq = Lambda_sq[,,k], tau_sq = tau_sq[k], method = method, 
                            AIC_selection=T, AIC_eps = AIC_eps, tau_sq_min = tau_sq_min, tau_sq_stepsize= tau_sq_stepsize,
                            epsilon = epsilon, maxitr = maxitr, verbose = F, weights=c(gtools::rdirichlet(1, rep(1,nrow(X[[k]])))) ))
@@ -256,17 +256,22 @@ boot_and_joint_parallel_iteration = function(X, S, n.vals, p, K, theta, sigma, L
 #' 
 #' @export 
 plot.jointGHS = function(x, k=1, plot_boot=TRUE, edges = NA, quantiles = c(0.025, 0.975)){
-  gcinfo(FALSE)
   p = ncol(x$theta[[k]])
   if(plot_boot){
-    # If no specific edges are requested, sample 16 edges at random from the set of edges identified by jointGHS
+    # If no specific edges are requested, sample 15 edges at random from the set of edges identified by jointGHS
     if(any(is.na(edges))){ 
       theta = x$theta[[k]]
       diag(theta) = NA
       edges.all = which(abs(theta)>1e-5,arr.ind=T)
       edges.all = t(apply(edges.all,1,sort))
       edges.all = edges.all[!duplicated(edges.all),]
-      if(nrow(edges.all)<16){
+      if(any(is.na(edges.all)) | any(is.null(edges.all)) | length(edges.all) ==0){
+        stop('No edges in network to print')
+      }
+      if(length(edges.all) == 2){
+        edges = edges.all
+      }
+      else if(nrow(edges.all)<15){
         edges = edges.all
       }
       else{
@@ -289,17 +294,13 @@ plot.jointGHS = function(x, k=1, plot_boot=TRUE, edges = NA, quantiles = c(0.025
     for (e in 1:n.edgepairs){
       lambdas[e,] = unlist(lapply(x$Lambda_sq_boot, FUN= function(s) s[[k]][edges[e,1],edges[e,2]]))
     }
-    plot.list = list()
-    for(e in 1:n.edgepairs){
-      lam.df = data.frame(Lambda_sq=lambdas[e,])
-      plot.list[[e]] = ggplot2::ggplot(lam.df,ggplot2::aes(x=Lambda_sq))+ggplot2::labs(title=paste0("Edge (", edges[e,1], ",", edges[e,2],")" ))+
+    plot.list= lapply(1:n.edgepairs, FUN = function(j) ggplot2::ggplot(data.frame(Lambda_sq=lambdas[j,]),ggplot2::aes(x=Lambda_sq))+ggplot2::labs(title=paste0("Edge (", edges[j,1], ",", edges[j,2],")" ))+
         ggplot2::theme(plot.title = ggplot2::element_text(size = 10)) + ggplot2::ylab('Frequency')+ggplot2::xlab('Lambda_sq')+
         ggplot2::geom_histogram(ggplot2::aes(y=..density..),color='deepskyblue',fill='deepskyblue',bins=50) + ggplot2::theme(legend.position ="none") + 
-        ggplot2::geom_density(alpha=.2, color = 'grey30',fill="deepskyblue")+
-        ggplot2::geom_vline(ggplot2::aes(xintercept=x$Lambda_sq[[k]][edges[e,1],edges[e,2]]),color="darkolivegreen3", size=0.5)+
-        ggplot2::geom_vline(ggplot2::aes(xintercept=quantile(lambdas[e,],quantiles[1])),color="maroon2", linetype="dashed", size=0.5)+
-        ggplot2::geom_vline(ggplot2::aes(xintercept=quantile(lambdas[e,],quantiles[2])),color="maroon2", linetype="dashed", size=0.5)
-    }
+        ggplot2::geom_density(alpha=.2, color = 'grey30',fill="deepskyblue")+ggplot2::geom_vline(ggplot2::aes(xintercept=x$Lambda_sq[[k]][edges[j,1],edges[j,2]]),color="darkolivegreen3", size=0.5)+
+        ggplot2::geom_vline(ggplot2::aes(xintercept=quantile(lambdas[j,],quantiles[2])),color="maroon2", linetype="dashed", size=0.5)+
+        ggplot2::geom_vline(ggplot2::aes(xintercept=quantile(lambdas[j,],quantiles[1])),color="maroon2", linetype="dashed", size=0.5) )
+    
     # Make grobs object to get legend
     get_legend<-function(quantiles){
       df=data.frame(1:10)
@@ -380,10 +381,13 @@ print.jointGHS = function(x, k=1, edges = NA, quantiles = c(0.025, 0.975), retur
   edges.outside=c()
   for (e in 1:n.edgepairs){
     lambdas[e,] = unlist(lapply(x$Lambda_sq_boot, FUN= function(s) s[[k]][edges[e,1],edges[e,2]]))
+    joint.est = x$Lambda_sq[[k]][edges[e,1],edges[e,2]]
+    quant1 = quantile(lambdas[e,],quantiles[1])
+    quant2 = quantile(lambdas[e,],quantiles[2])
     df[e,1] = paste0("(", edges[e,1], ",", edges[e,2],")")
-    df[e,2] = round(x$Lambda_sq[[k]][edges[e,1],edges[e,2]],4)
-    df[e,3] =  round(quantile(lambdas[e,],quantiles[1]),4)
-    df[e,4] =  round(quantile(lambdas[e,],quantiles[2]),4)
+    df[e,2] = round(joint.est,4)
+    df[e,3] =  round(quant1,4)
+    df[e,4] =  round(quant2,4)
     if(df[e,2] < df[e,3] | df[e,2] > df[e,4]){
       df[e,5] = '*'
       edges.outside = c(edges.outside,e)

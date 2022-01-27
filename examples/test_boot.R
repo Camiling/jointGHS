@@ -48,6 +48,7 @@ x2.sf.1.scaled = scale(x2.sf.1)
 # Use jointGHS on two identical data sets
 set.seed(123)
 res.joint.1 = jointGHS::jointGHS(list(x.sf.scaled.1, x2.sf.1.scaled), epsilon = 1e-5, AIC_selection = T, AIC_eps = 0.1, B=1000, boot_check=TRUE)
+save(res.joint.1,file='examples/bootsim.RData')
 
 # Edge 1--2 in network 1 - a true edge, but weaker signal (not detected in joint model)
 lambdas.test.k1 = unlist(lapply(res.joint.1$Lambda_sq_boot, FUN= function(s) s[[1]][1,2]))
@@ -178,6 +179,11 @@ res.df = print(res.joint.1, return_df=T)
 print(res.joint.1, k=1, edges=t(combn(1:p.1, 2)))
 # Too many edges, gives a messy printout... Better to stay with inferred edges only
 
+
+# As we see, no edges fell outside the intervals => valid joint analysis
+
+
+
 # EXAMPLE 2: two datasets from two completely unrelated distributions ------------------------------------------------------------------
 
 # n=100, p=50, larger partial correlations (0.229)
@@ -212,18 +218,27 @@ data.sf.2.2$sparsity # True sparsity: 0.04
 # Use jointGHS on two unrelated data sets
 set.seed(123)
 res.joint.2 = jointGHS::jointGHS(list(x.sf.scaled.2.1, x.sf.scaled.2.2), AIC_selection = T, epsilon = 1e-3, AIC_eps = 0.01, B=1000, boot_check=TRUE)
+save(res.joint.2,file='examples/bootsim2.RData')
 
 # Posterior checks
-plot(res.joint.2)
+plot(res.joint.2,k=1)
+plot(res.joint.2,k=2)
 
-print(res.joint.2)
+
+print(res.joint.2,k=1)
+print(res.joint.2,k=2)
+
+
+
+# As we see, even for these two unrelated networks no lambda_sq fell outside their interval
+#     => valid joint analysis even though the networks were unrelated, because of symmetry
 
 
 # EXAMPLE 3: four data sets - first three related and last unrelated ------------------------------------------------------------------
 
 
-# First network: n=100, p=50
-n.3=100
+# First network: n=150, p=50
+n.3=150
 p.3=50
 set.seed(12345)
 data.sf.3= huge::huge.generator(n=n.3, d=p.3,graph = 'scale-free',v=0.5,u=0.05) 
@@ -249,7 +264,7 @@ x.sf.scaled.3.2 = scale(mvtnorm::rmvnorm(n.3.2, sigma = solve(graph.3.2$prec.mat
 # Generate third data set with same sparsity, 10% edge disagreement
 n.3.3=150
 p.3.3=50
-set.seed(12345677)
+set.seed(1234567)
 graph.3.3 = mutate.graph(data.sf.3, 0.1)
 theta.true.3.3 = graph.3.3$prec.mat
 tailoredGlasso::sparsity(theta.true.3.3!=0)
@@ -257,9 +272,9 @@ tailoredGlasso::sparsity(theta.true.3.3!=0)
 x.sf.scaled.3.3 = scale(mvtnorm::rmvnorm(n.3.3, sigma = solve(graph.3.3$prec.mat)))
 
 # Generate fourth data set with same sparsity, unrelated
-n.3.4=150
+n.3.4=200
 p.3.4=50
-set.seed(12345688)
+set.seed(1234568)
 data.sf.3.4 = huge::huge.generator(n=n.3.4, d=p.3.4,graph = 'scale-free',v=0.5,u=0.05) 
 g.true.sf.3.4 = data.sf.3.4$theta # True adjacency matrix
 theta.true.3.4 = data.sf.3.4$omega # The precision matrix
@@ -272,11 +287,17 @@ thetas.true.list.3 = list(theta.true.3, theta.true.3.2, theta.true.3.3, theta.tr
 
 # Use jointGHS on the four related data sets
 set.seed(1234)
-res.joint.3 = jointGHS::jointGHS(list(x.sf.scaled.3, x.sf.scaled.3.2, x.sf.scaled.3.3, x.sf.scaled.3.4), AIC_selection = T, epsilon = 1e-3, AIC_eps = 0.1,B=400, boot_check=TRUE)
+res.joint.3 = jointGHS::jointGHS(list(x.sf.scaled.3, x.sf.scaled.3.2, x.sf.scaled.3.3, x.sf.scaled.3.4), AIC_selection = T, epsilon = 1e-3, AIC_eps = 0.1,B=1000, boot_check=TRUE)
+save(res.joint.1,file='examples/bootsim3.RData')
 
 # Posterior checks
-plot(res.joint.3)
+plot(res.joint.3,k=1)
+plot(res.joint.3,k=2)
+plot(res.joint.3,k=3)
+plot(res.joint.3,k=4)
 
-print(res.joint.3)
-
+print(res.joint.3,k=1)
+print(res.joint.3,k=2)
+print(res.joint.3,k=3)
+print(res.joint.3,k=4)
 
