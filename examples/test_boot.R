@@ -26,7 +26,6 @@ data.sf.1 = huge::huge.generator(n=n.1, d=p.1,graph = 'scale-free',v=0.5,u=0.05)
 g.true.sf.1 = data.sf.1$theta # True adjacency matrix
 theta.true.1 = data.sf.1$omega # The precision matrix
 theta.true.1[which(theta.true.1<10e-5,arr.ind=T)]=0  
-g.sf.1=graph.adjacency(data.sf.1$theta,mode="undirected",diag=F) # true igraph object
 x.sf.1 = data.sf.1$data # Observed attributes. nxp matrix.
 x.sf.scaled.1= scale(x.sf.1) # Scale columns/variables.
 s.sf.scaled.1 = cov(x.sf.scaled.1) # Empirical covariance matrix
@@ -48,7 +47,7 @@ x2.sf.1.scaled = scale(x2.sf.1)
 # Use jointGHS on two identical data sets
 set.seed(123)
 res.joint.1 = jointGHS::jointGHS(list(x.sf.scaled.1, x2.sf.1.scaled), epsilon = 1e-5, AIC_selection = T, AIC_eps = 0.1, B=1000, boot_check=TRUE)
-save(res.joint.1,file='examples/bootsim.RData')
+#save(res.joint.1,file='examples/bootsim.RData')
 
 # Edge 1--2 in network 1 - a true edge, but weaker signal (not detected in joint model)
 lambdas.test.k1 = unlist(lapply(res.joint.1$Lambda_sq_boot, FUN= function(s) s[[1]][1,2]))
@@ -194,7 +193,6 @@ data.sf.2.1= huge::huge.generator(n=n.2.1, d=p.2.1,graph = 'scale-free',v=0.5,u=
 g.true.sf.2.1 = data.sf.2.1$theta # True adjacency matrix
 theta.true.2.1 = data.sf.2.1$omega # The precision matrix
 theta.true.2.1[which(theta.true.2.1<10e-5,arr.ind=T)]=0  
-g.sf.2.1=graph.adjacency(data.sf.2.1$theta,mode="undirected",diag=F) # true igraph object
 x.sf.2.1 = data.sf.2.1$data # Observed attributes. nxp matrix.
 x.sf.scaled.2.1= scale(x.sf.2.1) # Scale columns/variables.
 s.sf.scaled.2.1 = cov(x.sf.scaled.2.1) # Empirical covariance matrix
@@ -209,7 +207,6 @@ data.sf.2.2= huge::huge.generator(n=n.2.2, d=p.2.2,graph = 'scale-free',v=0.5,u=
 g.true.sf.2.2 = data.sf.2.2$theta # True adjacency matrix
 theta.true.2.2 = data.sf.2.2$omega # The precision matrix
 theta.true.2.2[which(theta.true.2.2<10e-5,arr.ind=T)]=0  
-g.sf.2.2=graph.adjacency(data.sf.2.2$theta,mode="undirected",diag=F) # true igraph object
 x.sf.2.2 = data.sf.2.2$data # Observed attributes. nxp matrix.
 x.sf.scaled.2.2= scale(x.sf.2.2) # Scale columns/variables.
 s.sf.scaled.2.2 = cov(x.sf.scaled.2.2) # Empirical covariance matrix
@@ -218,7 +215,7 @@ data.sf.2.2$sparsity # True sparsity: 0.04
 # Use jointGHS on two unrelated data sets
 set.seed(123)
 res.joint.2 = jointGHS::jointGHS(list(x.sf.scaled.2.1, x.sf.scaled.2.2), AIC_selection = T, epsilon = 1e-3, AIC_eps = 0.01, B=1000, boot_check=TRUE)
-save(res.joint.2,file='examples/bootsim2.RData')
+#save(res.joint.2,file='examples/bootsim2.RData')
 
 # Posterior checks
 plot(res.joint.2,k=1)
@@ -245,7 +242,6 @@ data.sf.3= huge::huge.generator(n=n.3, d=p.3,graph = 'scale-free',v=0.5,u=0.05)
 g.true.sf.3 = data.sf.3$theta # True adjacency matrix
 theta.true.3 = data.sf.3$omega # The precision matrix
 theta.true.3[which(theta.true.3<10e-5,arr.ind=T)]=0  
-g.sf.3=graph.adjacency(data.sf.3$theta,mode="undirected",diag=F) # true igraph object
 x.sf.3 = data.sf.3$data # Observed attributes. nxp matrix.
 x.sf.scaled.3= scale(x.sf.3) # Scale columns/variables.
 s.sf.scaled.3 = cov(x.sf.scaled.3) # Empirical covariance matrix
@@ -288,7 +284,7 @@ thetas.true.list.3 = list(theta.true.3, theta.true.3.2, theta.true.3.3, theta.tr
 # Use jointGHS on the four related data sets
 set.seed(1234)
 res.joint.3 = jointGHS::jointGHS(list(x.sf.scaled.3, x.sf.scaled.3.2, x.sf.scaled.3.3, x.sf.scaled.3.4), AIC_selection = T, epsilon = 1e-3, AIC_eps = 0.1,B=1000, boot_check=TRUE)
-save(res.joint.1,file='examples/bootsim3.RData')
+#save(res.joint.1,file='examples/bootsim3.RData')
 
 # Posterior checks
 plot(res.joint.3,k=1)
@@ -300,4 +296,77 @@ print(res.joint.3,k=1)
 print(res.joint.3,k=2)
 print(res.joint.3,k=3)
 print(res.joint.3,k=4)
+
+
+# EXAMPLE 4: six data sets - first five related and last unrelated ------------------------------------------------------------------
+
+
+# First network: n=150, p=50
+n.4=150
+p.4=50
+set.seed(123)
+data.sf.4= huge::huge.generator(n=n.4, d=p.4,graph = 'scale-free',v=100,u=0.1) 
+g.true.sf.4 = data.sf.4$theta # True adjacency matrix
+theta.true.4 = data.sf.4$omega # The precision matrix
+theta.true.4[which(theta.true.4<10e-5,arr.ind=T)]=0  
+x.sf.4 = data.sf.4$data # Observed attributes. nxp matrix.
+x.sf.scaled.4= scale(x.sf.4) # Scale columns/variables.
+s.sf.scaled.4 = cov(x.sf.scaled.4) # Empirical covariance matrix
+data.sf.4$sparsity # True sparsity: 0.04
+round(cov2cor(data.sf.4$omega),4)[1:10,1:10] # Size of partial correlations
+x.sf.scaled.4 = scale(mvtnorm::rmvnorm(n.4, sigma = data.sf.4$sigma)) # Generate new data
+
+# Generate second data set with same sparsity
+n.4.2=150
+p.4.2=50
+set.seed(123456)
+x.sf.scaled.4.2 = scale(mvtnorm::rmvnorm(n.4.2, sigma = data.sf.4$sigma))
+
+# Generate third data set 
+n.4.3=150
+p.4.3=50
+set.seed(1234567)
+x.sf.scaled.4.3 = scale(mvtnorm::rmvnorm(n.4.3, sigma = data.sf.4$sigma))
+
+# Generate fourth data set 
+n.4.4=150
+p.4.4=50
+set.seed(12345678)
+x.sf.scaled.4.4 = scale(mvtnorm::rmvnorm(n.4.4, sigma = data.sf.4$sigma))
+
+# Generate fifth data set 
+n.4.5=150
+p.4.5=50
+set.seed(123456789)
+x.sf.scaled.4.5 = scale(mvtnorm::rmvnorm(n.4.5, sigma = data.sf.4$sigma))
+
+# Generate last data set with same sparsity, unrelated
+n.4.6=150
+p.4.6=50
+set.seed(12)
+data.sf.4.6 = huge::huge.generator(n=n.4.6, d=p.4.6,graph = 'scale-free',v=0.5,u=0.05) 
+theta.true.4.6 = data.sf.4.6$omega # The precision matrix
+theta.true.4.6[which(theta.true.4.6<10e-5,arr.ind=T)]=0  
+x.sf.scaled.4.6 = scale(mvtnorm::rmvnorm(n.4.6, sigma = data.sf.4.6$sigma)) # Generate new data
+
+# Use jointGHS on the four related data sets
+set.seed(12345)
+res.joint.4 = jointGHS::jointGHS(list(x.sf.scaled.4, x.sf.scaled.4.2, x.sf.scaled.4.3, x.sf.scaled.4.4, x.sf.scaled.4.5, x.sf.scaled.4.6), AIC_selection = T, epsilon = 1e-3, AIC_eps = 0.1,B=1000, boot_check=TRUE, boot_lambda = F)
+save(res.joint.4,file='examples/bootsim4.RData')
+
+# Posterior checks
+plot(res.joint.4,k=1)
+plot(res.joint.4,k=2)
+plot(res.joint.4,k=3)
+plot(res.joint.4,k=4)
+plot(res.joint.4,k=5)
+plot(res.joint.4,k=6)
+
+print(res.joint.4,k=1, quantiles=c(0,0.95))
+print(res.joint.4,k=2, quantiles=c(0,0.95))
+print(res.joint.4,k=3, quantiles=c(0,0.95))
+print(res.joint.4,k=4, quantiles=c(0,0.95))
+print(res.joint.4,k=5, quantiles=c(0,0.95))
+print(res.joint.4,k=6, quantiles=c(0,0.95))
+
 

@@ -4,18 +4,27 @@
 \alias{print.jointGHS}
 \title{Print function for S3 class "jointGHS"}
 \usage{
-\method{print}{jointGHS}(x, k = 1, edges = NA, quantiles = c(0.025, 0.975), return_df = F)
+\method{print}{jointGHS}(
+  x,
+  k = 1,
+  edges = NA,
+  quantiles = c(0.025, 0.975),
+  return_df = F,
+  boot_lambda = FALSE
+)
 }
 \arguments{
 \item{x}{an object with S3 class \code{"jointGHS"}}
 
 \item{k}{the network to print the results for}
 
-\item{edges}{the edges for which to show the Bayesian bootstrap posterior distribution. A matrix with \eqn{2} columns. If not provided, \eqn{16} edges are selected at random amongst the infererred jointGHS edge set}
+\item{edges}{the edges for which to show the Bayesian bootstrap posterior distribution. A matrix with \eqn{2} columns, or alternatively the string \code{'all'}. If not provided, \eqn{16} edges are selected at random amongst the infererred jointGHS edge set}
 
 \item{quantiles}{the quantiles to show when plotting the Bayesian bootstrap posterior distribution of the local scale parameters}
 
 \item{return_df}{should the results be returned as a data frame? Default \code{FALSE}}
+
+\item{boot_lambda}{are we interested in the distribution of \code{Lambda_sq}?}
 }
 \value{
 object of class \code{"data.frame"}

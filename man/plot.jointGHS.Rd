@@ -4,7 +4,16 @@
 \alias{plot.jointGHS}
 \title{Plot function for S3 class "jointGHS"}
 \usage{
-\method{plot}{jointGHS}(x, k = 1, plot_boot = TRUE, edges = NA, quantiles = c(0.025, 0.975))
+\method{plot}{jointGHS}(
+  x,
+  k = 1,
+  plot_boot = TRUE,
+  edges = NA,
+  quantiles = c(0.025, 0.975),
+  boot_lambda = FALSE,
+  show_single = FALSE,
+  true_theta = NULL
+)
 }
 \arguments{
 \item{x}{An object with S3 class \code{"jointGHS"}}
@@ -16,6 +25,12 @@
 \item{edges}{the edges for which to show the Bayesian bootstrap posterior distribution. An matrix with \eqn{2} columns. If not specified, \eqn{15} edges are selected at random amongst the infererred jointGHS edge set}
 
 \item{quantiles}{the quantiles to show when plotting the Bayesian bootstrap posterior distribution of the local scale parameters}
+
+\item{boot_lambda}{are we interested in the distribution of \code{Lambda_sq}?}
+
+\item{show_single}{should the estimate from the single network analysis be included as a bar?}
+
+\item{true_theta}{if provided, the 'true' value of \code{theta} to include as a bar in the plot}
 }
 \description{
 This function provides functionality for plotting the results of the jointGHS. Can be used to evaluate the local scales \code{Lambda_sq} of a network from the joint analysis against their Bayesian bootstrap distributions, and to visualize the inferred networks

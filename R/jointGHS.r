@@ -12,6 +12,7 @@
 #' @param AIC_eps if \code{AIC_selection=TRUE}, the tolerance for the AIC convergence assessment
 #' @param tau_sq_min if \code{AIC_selection=TRUE}, the smallest value of \code{tau_sq} to consider  
 #' @param tau_sq_stepsize if \code{AIC_selection=TRUE}, the step-size to use in the grid for \code{tau_sq}. Optional argument
+#' @param tau_sq_max if \code{AIC_selection=TRUE}, the largest value of \code{tau_sq} to consider  
 #' @param epsilon tolerance for the convergence assessment
 #' @param maxitr maximum number of iterations
 #' @param scale should variables be scaled? Default \code{TRUE}
@@ -22,6 +23,7 @@
 #' @param boot_check should bootstrapping be performed to check the joint results?
 #' @param B if \code{boot_check=TRUE}, the number of bootstrap samples to draw
 #' @param nCores if \code{boot_check=TRUE}, how many cores should be used for the bootstrap sampling?
+#' @param boot_lambda should \code{Lambda_sq} be bootstrapped? If \code{FALSE}, \code{theta} is bootstrapped instead
 #' 
 #' @return a fitted \code{jointGHS} object
 #' 
@@ -31,9 +33,9 @@
 #' 
 #' @export 
 #' 
-jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, method= 'ECM', AIC_selection=TRUE, AIC_eps = 1e-1, tau_sq_min =1e-3, tau_sq_stepsize= NULL,
+jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, method= 'ECM', AIC_selection=TRUE, AIC_eps = 1e-1, tau_sq_min =1e-3, tau_sq_stepsize= NULL,tau_sq_max=20,
                      epsilon = 1e-5, maxitr = 1e3, scale=TRUE, verbose=TRUE, savepath = FALSE, save_Q = FALSE, fix_tau = FALSE, boot_check=FALSE,
-                     B=100,nCores=5){
+                     B=100,nCores=5, boot_lambda=TRUE){
 
   # If only one data set is provided, single-network version is used instead.
   if(!is.list(X)){
@@ -42,8 +44,9 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
     }
     # All other checks are performed within fastGHS
     cat('Single data set provided: performing single-network ECM for GHS \n')
-    out <- fastGHS::fastGHS(X, theta=theta, sigma=sigma, Lambda_sq = Lambda_sq, tau_sq = tau_sq, method = method, 
-                            epsilon = epsilon, maxitr = maxitr, verbose = verbose, savepath=savepath,save_Q=save_Q, fix_tau = fix_tau)
+    out <- fastGHS::fastGHS(X, theta=theta, sigma=sigma, Lambda_sq = Lambda_sq, tau_sq = tau_sq, method = method, AIC_selection = AIC_selection, AIC_eps = AIC_eps,
+                            tau_sq_min=tau_sq_min, tau_sq_stepsize = tau_sq_stepsize, tau_sq_max=tau_sq_max,
+                            epsilon = epsilon, maxitr = maxitr, scale=scale, verbose = verbose, savepath=savepath,save_Q=save_Q, fix_tau = fix_tau)
     class(out) = "jointGHS"
     return(out)
   }
@@ -126,6 +129,9 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
     tau_sq <- rep(1, K)
   }
   else{
+    if(any(is.null(tau_sq))){
+      stop('Cannot select fix_tau=T without providing a tau_sq value \n')
+    }
     if(length(tau_sq)==1){
       tau_sq = rep(tau_sq, K)
     }
@@ -144,11 +150,11 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
   use_ICM = method=='ICM'
   
   # Select tau for each network using AIC crierion
-  if(AIC_selection){
+  if(AIC_selection & !fix_tau){
     doParallel::registerDoParallel(K)
     res.list = foreach (k=1:K) %dopar% {
       fastGHS::fastGHS(X[[k]], theta=theta[,,k], sigma=sigma[,,k], Lambda_sq = Lambda_sq[,,k], tau_sq = tau_sq[k], method = method, 
-                       AIC_selection=AIC_selection, AIC_eps = AIC_eps, tau_sq_min =tau_sq_min, tau_sq_stepsize= tau_sq_stepsize,
+                       AIC_selection=AIC_selection, AIC_eps = AIC_eps, tau_sq_min =tau_sq_min, tau_sq_stepsize= tau_sq_stepsize,tau_sq_max=tau_sq_max,
                        epsilon = epsilon, maxitr = maxitr, verbose = F);
     }
     foreach::registerDoSEQ()
@@ -164,20 +170,23 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
     # Use output to initialize additional parameters
     theta = array(unlist(theta_single), c(p,p,K))
   }
-  if(boot_check & AIC_selection){
+  if(boot_check & AIC_selection & !fix_tau){
     perform_boot = c(0,rep(1,B)) # Ensures joint model is run in parallel as well
     doParallel::registerDoParallel(nCores)
     boot.list = foreach (b=1:(B+1)) %dopar% {
       boot_and_joint_parallel_iteration(X, S=S, n.vals = n.vals, p=p, K=K, theta=theta, sigma=sigma, Lambda_sq = Lambda_sq, tau_sq = tau_sq,method=method,
-                                        use_ICM = use_ICM, tau_sq_min = tau_sq_min, tau_sq_stepsize = tau_sq_stepsize, epsilon = epsilon, maxitr = maxitr, 
-                                        AIC_eps = AIC_eps, perform_boot=perform_boot[b]);
+                                        use_ICM = use_ICM, tau_sq_min = tau_sq_min, tau_sq_stepsize = tau_sq_stepsize, tau_sq_max = tau_sq_max, epsilon = epsilon, maxitr = maxitr, 
+                                        AIC_eps = AIC_eps, perform_boot=perform_boot[b], boot_lambda=boot_lambda);
     }
     foreach::registerDoSEQ()
     # Joint results
     out <- boot.list[[1]] 
     # Bootstrap results
     boot.res <- boot.list[-1]
-    boot.lambda.list = lapply(boot.res, FUN = function(s) s$Lambda_sq) # A length B list of length K lists
+    if(boot_lambda){
+       boot.lambda.list = lapply(boot.res, FUN = function(s) s$Lambda_sq) # A length B list of length K lists
+    }
+    boot.theta.list = lapply(boot.res, FUN = function(s) s$theta) # A length B list of length K lists
     
   }
   else{
@@ -201,15 +210,18 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
     out$sigma[[k]] = sigma_list[,,k]
     out$Lambda_sq[[k]] = Lambda_sq_list[,,k]
   }
-  if(AIC_selection){
+  if(AIC_selection & exists('AIC_scores')){
     out$Lambda_sq_single = Lambda_sq_single
     out$theta_single = theta_single
     out$sigma_single = sigma_single
     out$AIC_scores = AIC_scores
     out$tau_sq_vals = tau_sq_vals
   }
-  if(boot_check){
-    out$Lambda_sq_boot =boot.lambda.list
+  if(boot_check & exists('boot.lambda.list')){
+    if(boot_lambda){
+      out$Lambda_sq_boot =boot.lambda.list
+    }
+    out$theta_boot =boot.theta.list
   }
 
   # Save outputs
@@ -221,16 +233,19 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
 }
 
 #' @keywords internal
-boot_and_joint_parallel_iteration = function(X, S, n.vals, p, K, theta, sigma, Lambda_sq, tau_sq, method, use_ICM, tau_sq_min, tau_sq_stepsize, 
-                                             epsilon, maxitr, AIC_eps, perform_boot) {
+boot_and_joint_parallel_iteration = function(X, S, n.vals, p, K, theta, sigma, Lambda_sq, tau_sq, method, use_ICM, tau_sq_min, tau_sq_stepsize, tau_sq_max,
+                                             epsilon, maxitr, AIC_eps, perform_boot, boot_lambda) {
   if(perform_boot==1){
     # Use Bayesian bootstrap with weights sampled from the Dirichlet distribution
     res = lapply(1:K, FUN = function(k) fastGHS::fastGHS(X[[k]], theta=theta[,,k], sigma=sigma[,,k], Lambda_sq = Lambda_sq[,,k], tau_sq = tau_sq[k], method = method, 
-                           AIC_selection=T, AIC_eps = AIC_eps, tau_sq_min = tau_sq_min, tau_sq_stepsize= tau_sq_stepsize,
+                           AIC_selection=T, AIC_eps = AIC_eps, tau_sq_min = tau_sq_min, tau_sq_stepsize= tau_sq_stepsize, tau_sq_max = tau_sq_max,
                            epsilon = epsilon, maxitr = maxitr, verbose = F, weights=c(gtools::rdirichlet(1, rep(1,nrow(X[[k]])))) ))
     # Save only relevant output
     out = list()
-    out$Lambda_sq = lapply(res, FUN = function(s) s$Lambda_sq)
+    if(boot_lambda){
+      out$Lambda_sq = lapply(res, FUN = function(s) s$Lambda_sq)
+    }
+    out$theta = lapply(res, FUN = function(s) s$theta)
     
   }
   else{
@@ -251,11 +266,14 @@ boot_and_joint_parallel_iteration = function(X, S, n.vals, p, K, theta, sigma, L
 #' @param plot_boot should the Bayesian bootstrap sample posterior of some of the Lambda_sq be shown? If \code{FALSE}, the jointGHS networks are visualized instead
 #' @param edges the edges for which to show the Bayesian bootstrap posterior distribution. An matrix with \eqn{2} columns. If not specified, \eqn{15} edges are selected at random amongst the infererred jointGHS edge set
 #' @param quantiles the quantiles to show when plotting the Bayesian bootstrap posterior distribution of the local scale parameters
+#' @param boot_lambda are we interested in the distribution of \code{Lambda_sq}?
+#' @param show_single should the estimate from the single network analysis be included as a bar?
+#' @param true_theta if provided, the 'true' value of \code{theta} to include as a bar in the plot
 #'
 #' @seealso \code{\link{jointGHS}}, \code{\link{print.jointGHS}}
 #' 
 #' @export 
-plot.jointGHS = function(x, k=1, plot_boot=TRUE, edges = NA, quantiles = c(0.025, 0.975)){
+plot.jointGHS = function(x, k=1, plot_boot=TRUE, edges = NA, quantiles = c(0.025, 0.975), boot_lambda=FALSE, show_single=FALSE, true_theta=NULL){
   p = ncol(x$theta[[k]])
   if(plot_boot){
     # If no specific edges are requested, sample 15 edges at random from the set of edges identified by jointGHS
@@ -285,6 +303,17 @@ plot.jointGHS = function(x, k=1, plot_boot=TRUE, edges = NA, quantiles = c(0.025
     if(ncol(edges)!=2 | (is.null(dim(edges)) & length(edges)!=2)){
       stop('Edges must be a matrix with 2 columns, with one row per edge pair. \n')
     }
+    
+    # If we are checking theta
+    if(!boot_lambda){
+      x$Lambda_sq_boot = x$theta_boot
+      x$Lambda_sq = lapply(x$theta, cov2cor) # Get correlation so we can compare regardless of diagonal element values
+      x$Lambda_sq_single = lapply(x$theta_single, cov2cor)
+    }
+    if(!is.null(true_theta)){
+      true_theta = cov2cor(true_theta)
+    }
+    
     if(is.null(x$Lambda_sq_boot)){
       stop('Must provide jointGHS object that was found with option boot_check = TRUE')
     }
@@ -292,33 +321,55 @@ plot.jointGHS = function(x, k=1, plot_boot=TRUE, edges = NA, quantiles = c(0.025
     B = length(unlist(lapply(x$Lambda_sq_boot, FUN= function(s) s[[k]][1,2])))
     lambdas = matrix(0,n.edgepairs,B)
     for (e in 1:n.edgepairs){
-      lambdas[e,] = unlist(lapply(x$Lambda_sq_boot, FUN= function(s) s[[k]][edges[e,1],edges[e,2]]))
+      lambdas[e,] = unlist(lapply(x$Lambda_sq_boot, FUN= function(s) ifelse(boot_lambda,s[[k]][edges[e,1],edges[e,2]],cov2cor(s[[k]])[edges[e,1],edges[e,2]] )))
     }
+    xlab.name = ifelse(boot_lambda==T, 'Lambda_sq', 'theta')
     plot.list= lapply(1:n.edgepairs, FUN = function(j) ggplot2::ggplot(data.frame(Lambda_sq=lambdas[j,]),ggplot2::aes(x=Lambda_sq))+ggplot2::labs(title=paste0("Edge (", edges[j,1], ",", edges[j,2],")" ))+
-        ggplot2::theme(plot.title = ggplot2::element_text(size = 10)) + ggplot2::ylab('Frequency')+ggplot2::xlab('Lambda_sq')+
+        ggplot2::theme(plot.title = ggplot2::element_text(size = 10)) + ggplot2::ylab('Frequency')+ggplot2::xlab(xlab.name)+
         ggplot2::geom_histogram(ggplot2::aes(y=..density..),color='deepskyblue',fill='deepskyblue',bins=50) + ggplot2::theme(legend.position ="none") + 
-        ggplot2::geom_density(alpha=.2, color = 'grey30',fill="deepskyblue")+ggplot2::geom_vline(ggplot2::aes(xintercept=x$Lambda_sq[[k]][edges[j,1],edges[j,2]]),color="darkolivegreen3", size=0.5)+
+        ggplot2::geom_density(alpha=.2, color = 'grey30',fill="deepskyblue")+
+        ggplot2::geom_vline(ggplot2::aes(xintercept=x$Lambda_sq[[k]][edges[j,1],edges[j,2]]),color="darkolivegreen3", size=0.5)+
         ggplot2::geom_vline(ggplot2::aes(xintercept=quantile(lambdas[j,],quantiles[2])),color="maroon2", linetype="dashed", size=0.5)+
-        ggplot2::geom_vline(ggplot2::aes(xintercept=quantile(lambdas[j,],quantiles[1])),color="maroon2", linetype="dashed", size=0.5) )
+        ggplot2::geom_vline(ggplot2::aes(xintercept=quantile(lambdas[j,],quantiles[1])),color="maroon2", linetype="dashed", size=0.5)+
+        {if(show_single) ggplot2::geom_vline(ggplot2::aes(xintercept=x$Lambda_sq_single[[k]][edges[j,1],edges[j,2]]),color="darkorange", linetype="solid", size=0.5)}+
+        {if(!is.null(true_theta)) ggplot2::geom_vline(ggplot2::aes(xintercept=true_theta[edges[j,1],edges[j,2]]),color="aquamarine", linetype="solid", size=0.5)})
     
     # Make grobs object to get legend
-    get_legend<-function(quantiles){
+    get_legend<-function(quantiles, show_single=F, true_theta=NULL){
       df=data.frame(1:10)
-      df[,2] = factor(c(rep('jointGHS estimate',5),rep(paste0(100*abs(diff(quantiles)),'% Credible interval'),5)))
+      if(show_single & !is.null(true_theta)){
+        df = data.frame(1:20)
+      }
+      else if(show_single | !is.null(true_theta)){
+        df = data.frame(1:15)
+      }
+      names.all = c(rep('jointGHS estimate',5),rep(paste0(100*abs(diff(quantiles)),'% credible interval'),5))
+      if(show_single) names.all = c(names.all, rep('single estimate',5))
+      if(!is.null(true_theta)) names.all =c(names.all, rep('truth',5))
+      df[,2]= factor(names.all)
+      
       names(df) = c('x', 'points')
+      col.vals = c('maroon2','darkolivegreen3')
+      if(show_single) col.vals = c(col.vals,'darkorange')
+      if(!is.null(true_theta)) col.vals = c(col.vals,'aquamarine')
+      type.vals = c("dashed", "solid")
+      if(show_single) type.vals = c(type.vals,'solid')
+      if(!is.null(true_theta)) type.vals = c(type.vals,'solid')
+      
       myggplot = ggplot2::ggplot(df,ggplot2::aes(y=x, group=points)) + ggplot2::geom_line(ggplot2::aes(x=x, color=points, linetype=points)) + 
-        ggplot2::scale_linetype_manual(values=c("dashed", "solid"))+ ggplot2::scale_color_manual(values=c('maroon2','darkolivegreen3'))+
+        ggplot2::scale_linetype_manual(values=type.vals)+ ggplot2::scale_color_manual(values=col.vals)+
         ggplot2::theme(legend.position ="left", legend.title =ggplot2::element_blank())
+
       tmp <- ggplot2::ggplot_gtable(ggplot2::ggplot_build(myggplot))
       leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
       legend <- tmp$grobs[[leg]]
       return(legend)
     }
-    legend = get_legend(quantiles)
+    legend = get_legend(quantiles, show_single, true_theta)
     plot.list[[(n.edgepairs+1)]] = legend
 
     dev.new()
-    gridExtra::grid.arrange(grobs=plot.list,top= paste0('Bayesian Bootstrap distribution of Lambda_sq for network k=', k))
+    gridExtra::grid.arrange(grobs=plot.list,top= paste0('Bayesian Bootstrap distribution of ', xlab.name, ' for network k=', k))
   }
   else{
     # If bootstrap results are not to be plotted, plot resulting networks
@@ -341,16 +392,17 @@ plot.jointGHS = function(x, k=1, plot_boot=TRUE, edges = NA, quantiles = c(0.025
 #' 
 #' @param x an object with S3 class \code{"jointGHS"}
 #' @param k the network to print the results for
-#' @param edges the edges for which to show the Bayesian bootstrap posterior distribution. A matrix with \eqn{2} columns. If not provided, \eqn{16} edges are selected at random amongst the infererred jointGHS edge set
+#' @param edges the edges for which to show the Bayesian bootstrap posterior distribution. A matrix with \eqn{2} columns, or alternatively the string \code{'all'}. If not provided, \eqn{16} edges are selected at random amongst the infererred jointGHS edge set
 #' @param quantiles the quantiles to show when plotting the Bayesian bootstrap posterior distribution of the local scale parameters
 #' @param return_df should the results be returned as a data frame? Default \code{FALSE}
-#' 
+#' @param boot_lambda are we interested in the distribution of \code{Lambda_sq}?
+#'
 #' @return object of class \code{"data.frame"}
 #'
 #' @seealso \code{\link{jointGHS}}, \code{\link{plot.jointGHS}}
 #' 
 #' @export 
-print.jointGHS = function(x, k=1, edges = NA, quantiles = c(0.025, 0.975), return_df=F){
+print.jointGHS = function(x, k=1, edges = NA, quantiles = c(0.025, 0.975), return_df=F, boot_lambda=FALSE){
   p = ncol(x$theta[[k]])
   # If no specific edges are requested, sample 16 edges at random from the set of edges identified by jointGHS
   if(any(is.na(edges))){ # Find all edges
@@ -363,9 +415,17 @@ print.jointGHS = function(x, k=1, edges = NA, quantiles = c(0.025, 0.975), retur
   if(length(edges)==2){
     edges = t(as.matrix(edges))
   }
+  if(any(edges)=='all'){
+    edges = t(combn(1:p, 2))
+  }
   edges = as.matrix(edges)
   if(ncol(edges)!=2 | (is.null(dim(edges)) & length(edges)!=2)){
      stop('Edges must be a matrix with 2 columns, with one row per edge pair. \n')
+  }
+  # If we are checking theta
+  if(!boot_lambda){
+    x$Lambda_sq_boot = x$theta_boot
+    x$Lambda_sq = x$theta
   }
   if(is.null(x$Lambda_sq_boot)){
     stop('Must provide jointGHS object that was found with option boot_check = TRUE')
@@ -373,15 +433,16 @@ print.jointGHS = function(x, k=1, edges = NA, quantiles = c(0.025, 0.975), retur
   n.edgepairs = nrow(edges) 
   B = length(unlist(lapply(x$Lambda_sq_boot, FUN= function(s) s[[k]][1,2])))
   lambdas = matrix(0,n.edgepairs,B)
+  var.name = ifelse(boot_lambda==T, 'Lambda_sq', 'theta')
   cat(paste0('\nCHECK PARAMETERS OF IDENTIFIED EDGES IN NETWORK k=',k, '\n'))
   cat('==========================================================================================\n')
-  cat('Lambda_sq checked against its single-network Bayesian bootstrap distribution \n')
+  cat(paste0(var.name,' checked against its single-network Bayesian bootstrap distribution \n'))
   cat('==========================================================================================\n')
   df = data.frame()
   edges.outside=c()
   for (e in 1:n.edgepairs){
-    lambdas[e,] = unlist(lapply(x$Lambda_sq_boot, FUN= function(s) s[[k]][edges[e,1],edges[e,2]]))
-    joint.est = x$Lambda_sq[[k]][edges[e,1],edges[e,2]]
+    lambdas[e,] = unlist(lapply(x$Lambda_sq_boot, FUN= function(s) ifelse(boot_lambda, s[[k]][edges[e,1],edges[e,2]], cov2cor(s[[k]])[edges[e,1],edges[e,2]] )))
+    joint.est = ifelse(boot_lambda, x$Lambda_sq[[k]][edges[e,1],edges[e,2]], cov2cor(x$Lambda_sq[[k]])[edges[e,1],edges[e,2]])
     quant1 = quantile(lambdas[e,],quantiles[1])
     quant2 = quantile(lambdas[e,],quantiles[2])
     df[e,1] = paste0("(", edges[e,1], ",", edges[e,2],")")

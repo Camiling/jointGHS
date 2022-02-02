@@ -15,6 +15,7 @@ jointGHS(
   AIC_eps = 0.1,
   tau_sq_min = 0.001,
   tau_sq_stepsize = NULL,
+  tau_sq_max = 20,
   epsilon = 1e-05,
   maxitr = 1000,
   scale = TRUE,
@@ -24,7 +25,8 @@ jointGHS(
   fix_tau = FALSE,
   boot_check = FALSE,
   B = 100,
-  nCores = 5
+  nCores = 5,
+  boot_lambda = TRUE
 )
 }
 \arguments{
@@ -48,6 +50,8 @@ jointGHS(
 
 \item{tau_sq_stepsize}{if \code{AIC_selection=TRUE}, the step-size to use in the grid for \code{tau_sq}. Optional argument}
 
+\item{tau_sq_max}{if \code{AIC_selection=TRUE}, the largest value of \code{tau_sq} to consider}
+
 \item{epsilon}{tolerance for the convergence assessment}
 
 \item{maxitr}{maximum number of iterations}
@@ -67,6 +71,8 @@ jointGHS(
 \item{B}{if \code{boot_check=TRUE}, the number of bootstrap samples to draw}
 
 \item{nCores}{if \code{boot_check=TRUE}, how many cores should be used for the bootstrap sampling?}
+
+\item{boot_lambda}{should \code{Lambda_sq} be bootstrapped? If \code{FALSE}, \code{theta} is bootstrapped instead}
 }
 \value{
 a fitted \code{jointGHS} object
