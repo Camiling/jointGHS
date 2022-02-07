@@ -217,7 +217,7 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
     out$AIC_scores = AIC_scores
     out$tau_sq_vals = tau_sq_vals
   }
-  if(boot_check & exists('boot.lambda.list')){
+  if(boot_check & exists('boot.theta.list')){
     if(boot_lambda){
       out$Lambda_sq_boot =boot.lambda.list
     }
@@ -415,7 +415,7 @@ print.jointGHS = function(x, k=1, edges = NA, quantiles = c(0.025, 0.975), retur
   if(length(edges)==2){
     edges = t(as.matrix(edges))
   }
-  if(any(edges)=='all'){
+  if(any(edges=='all')){
     edges = t(combn(1:p, 2))
   }
   edges = as.matrix(edges)

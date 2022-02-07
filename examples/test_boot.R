@@ -46,8 +46,9 @@ x2.sf.1.scaled = scale(x2.sf.1)
 
 # Use jointGHS on two identical data sets
 set.seed(123)
-res.joint.1 = jointGHS::jointGHS(list(x.sf.scaled.1, x2.sf.1.scaled), epsilon = 1e-5, AIC_selection = T, AIC_eps = 0.1, B=1000, boot_check=TRUE)
+#res.joint.1 = jointGHS::jointGHS(list(x.sf.scaled.1, x2.sf.1.scaled), epsilon = 1e-5, AIC_selection = T, AIC_eps = 0.1, B=1000, boot_check=TRUE)
 #save(res.joint.1,file='examples/bootsim.RData')
+load('examples/bootsim.RData')
 
 # Edge 1--2 in network 1 - a true edge, but weaker signal (not detected in joint model)
 lambdas.test.k1 = unlist(lapply(res.joint.1$Lambda_sq_boot, FUN= function(s) s[[1]][1,2]))
@@ -214,8 +215,9 @@ data.sf.2.2$sparsity # True sparsity: 0.04
 
 # Use jointGHS on two unrelated data sets
 set.seed(123)
-res.joint.2 = jointGHS::jointGHS(list(x.sf.scaled.2.1, x.sf.scaled.2.2), AIC_selection = T, epsilon = 1e-3, AIC_eps = 0.01, B=1000, boot_check=TRUE)
+#res.joint.2 = jointGHS::jointGHS(list(x.sf.scaled.2.1, x.sf.scaled.2.2), AIC_selection = T, epsilon = 1e-3, AIC_eps = 0.01, B=1000, boot_check=TRUE)
 #save(res.joint.2,file='examples/bootsim2.RData')
+load('examples/bootsim2.RData')
 
 # Posterior checks
 plot(res.joint.2,k=1)
@@ -283,8 +285,9 @@ thetas.true.list.3 = list(theta.true.3, theta.true.3.2, theta.true.3.3, theta.tr
 
 # Use jointGHS on the four related data sets
 set.seed(1234)
-res.joint.3 = jointGHS::jointGHS(list(x.sf.scaled.3, x.sf.scaled.3.2, x.sf.scaled.3.3, x.sf.scaled.3.4), AIC_selection = T, epsilon = 1e-3, AIC_eps = 0.1,B=1000, boot_check=TRUE)
+#res.joint.3 = jointGHS::jointGHS(list(x.sf.scaled.3, x.sf.scaled.3.2, x.sf.scaled.3.3, x.sf.scaled.3.4), AIC_selection = T, epsilon = 1e-3, AIC_eps = 0.1,B=1000, boot_check=TRUE)
 #save(res.joint.1,file='examples/bootsim3.RData')
+load('examples/bootsim3.RData')
 
 # Posterior checks
 plot(res.joint.3,k=1)
@@ -303,7 +306,7 @@ print(res.joint.3,k=4)
 
 # First network: n=150, p=50
 n.4=150
-p.4=50
+p.4=20
 set.seed(123)
 data.sf.4= huge::huge.generator(n=n.4, d=p.4,graph = 'scale-free',v=100,u=0.1) 
 g.true.sf.4 = data.sf.4$theta # True adjacency matrix
@@ -318,31 +321,31 @@ x.sf.scaled.4 = scale(mvtnorm::rmvnorm(n.4, sigma = data.sf.4$sigma)) # Generate
 
 # Generate second data set with same sparsity
 n.4.2=150
-p.4.2=50
+p.4.2=20
 set.seed(123456)
 x.sf.scaled.4.2 = scale(mvtnorm::rmvnorm(n.4.2, sigma = data.sf.4$sigma))
 
 # Generate third data set 
 n.4.3=150
-p.4.3=50
+p.4.3=20
 set.seed(1234567)
 x.sf.scaled.4.3 = scale(mvtnorm::rmvnorm(n.4.3, sigma = data.sf.4$sigma))
 
 # Generate fourth data set 
 n.4.4=150
-p.4.4=50
+p.4.4=20
 set.seed(12345678)
 x.sf.scaled.4.4 = scale(mvtnorm::rmvnorm(n.4.4, sigma = data.sf.4$sigma))
 
 # Generate fifth data set 
 n.4.5=150
-p.4.5=50
+p.4.5=20
 set.seed(123456789)
 x.sf.scaled.4.5 = scale(mvtnorm::rmvnorm(n.4.5, sigma = data.sf.4$sigma))
 
 # Generate last data set with same sparsity, unrelated
 n.4.6=150
-p.4.6=50
+p.4.6=20
 set.seed(12)
 data.sf.4.6 = huge::huge.generator(n=n.4.6, d=p.4.6,graph = 'scale-free',v=0.5,u=0.05) 
 theta.true.4.6 = data.sf.4.6$omega # The precision matrix
@@ -351,8 +354,9 @@ x.sf.scaled.4.6 = scale(mvtnorm::rmvnorm(n.4.6, sigma = data.sf.4.6$sigma)) # Ge
 
 # Use jointGHS on the four related data sets
 set.seed(12345)
-res.joint.4 = jointGHS::jointGHS(list(x.sf.scaled.4, x.sf.scaled.4.2, x.sf.scaled.4.3, x.sf.scaled.4.4, x.sf.scaled.4.5, x.sf.scaled.4.6), AIC_selection = T, epsilon = 1e-3, AIC_eps = 0.1,B=1000, boot_check=TRUE, boot_lambda = F)
-save(res.joint.4,file='examples/bootsim4.RData')
+res.joint.4 = jointGHS::jointGHS(list(x.sf.scaled.4, x.sf.scaled.4.2, x.sf.scaled.4.3, x.sf.scaled.4.4, x.sf.scaled.4.5,x.sf.scaled.4.6), AIC_selection = T, epsilon = 1e-3, AIC_eps = 0.1,B=1000, boot_check=TRUE, boot_lambda = F)
+#save(res.joint.4,file='examples/bootsim4.RData')
+load('examples/bootsim4.RData')
 
 # Posterior checks
 plot(res.joint.4,k=1)
@@ -368,5 +372,67 @@ print(res.joint.4,k=3, quantiles=c(0,0.95))
 print(res.joint.4,k=4, quantiles=c(0,0.95))
 print(res.joint.4,k=5, quantiles=c(0,0.95))
 print(res.joint.4,k=6, quantiles=c(0,0.95))
+
+
+# The corresponding theta vs NuInv plot
+
+
+theta.joint = res.joint.4$theta
+Lambda_sq.joint = res.joint.4$Lambda_sq
+
+truth.all = matrix('none', p.4, p.4)
+truth.all[theta.true.4!=0 & theta.true.4.6!=0] = 'all'
+truth.all[theta.true.4!=0 & theta.true.4.6==0] = 'all but 6'
+truth.all[theta.true.4==0 & theta.true.4.6!=0] = 'just 6'
+truth.all = truth.all[upper.tri(truth.all)]
+
+theta.offdiag.1 = abs(cov2cor(theta.joint[[1]]))
+theta.offdiag.1 = theta.offdiag.1[upper.tri(theta.offdiag.1)]
+theta.offdiag.2 = abs(cov2cor(theta.joint[[2]]))
+theta.offdiag.2 = theta.offdiag.2[upper.tri(theta.offdiag.2)]
+theta.offdiag.3 = abs(cov2cor(theta.joint[[3]]))
+theta.offdiag.3 = theta.offdiag.3[upper.tri(theta.offdiag.3)]
+theta.offdiag.4 = abs(cov2cor(theta.joint[[4]]))
+theta.offdiag.4 = theta.offdiag.4[upper.tri(theta.offdiag.4)]
+theta.offdiag.5 = abs(cov2cor(theta.joint[[5]]))
+theta.offdiag.5 = theta.offdiag.5[upper.tri(theta.offdiag.5)]
+theta.offdiag.6 = abs(cov2cor(theta.joint[[6]]))
+theta.offdiag.6 = theta.offdiag.6[upper.tri(theta.offdiag.6)]
+
+Lambda_sq.offdiag.1 = Lambda_sq.joint[[1]]
+Lambda_sq.offdiag.1 = Lambda_sq.offdiag.1[upper.tri(Lambda_sq.offdiag.1)]
+Lambda_sq.offdiag.2 = Lambda_sq.joint[[2]]
+Lambda_sq.offdiag.2 = Lambda_sq.offdiag.2[upper.tri(Lambda_sq.offdiag.2)]
+Lambda_sq.offdiag.3 = Lambda_sq.joint[[3]]
+Lambda_sq.offdiag.3 = Lambda_sq.offdiag.3[upper.tri(Lambda_sq.offdiag.3)]
+Lambda_sq.offdiag.4 = Lambda_sq.joint[[4]]
+Lambda_sq.offdiag.4 = Lambda_sq.offdiag.4[upper.tri(Lambda_sq.offdiag.4)]
+Lambda_sq.offdiag.5 = Lambda_sq.joint[[5]]
+Lambda_sq.offdiag.5 = Lambda_sq.offdiag.5[upper.tri(Lambda_sq.offdiag.5)]
+Lambda_sq.offdiag.6 = Lambda_sq.joint[[6]]
+Lambda_sq.offdiag.6 = Lambda_sq.offdiag.6[upper.tri(Lambda_sq.offdiag.6)]
+# Get E[1/Nu] matrix. Same for all K networks
+E_NuInv.iter = res.joint.4$E_NuInv
+E_NuInv.offdiag = E_NuInv.iter[upper.tri(E_NuInv.iter)]
+
+df.plot = data.frame(theta=c(theta.offdiag.1, theta.offdiag.2,theta.offdiag.3,theta.offdiag.4,theta.offdiag.5,theta.offdiag.6), 
+                     Lambda_sq = c(Lambda_sq.offdiag.1, Lambda_sq.offdiag.2, Lambda_sq.offdiag.3, Lambda_sq.offdiag.4, Lambda_sq.offdiag.5, Lambda_sq.offdiag.6), 
+                     NuInv = rep(E_NuInv.offdiag,6), 
+                     truth = factor(rep(truth.all, 6)),estimate= factor(c(rep(1,length(theta.offdiag.1)), rep(2,length(theta.offdiag.2)),
+                     rep(3,length(theta.offdiag.3)),rep(4,length(theta.offdiag.4)),rep(5,length(theta.offdiag.5)),rep(6,length(theta.offdiag.6)))))
+
+p.lambda = ggplot2::ggplot(df.plot, aes(y=Lambda_sq,x=NuInv))+ labs(title=" ")+theme(plot.title = element_text(hjust = 0.5))+
+  geom_point(aes(colour=estimate, shape=truth)) + 
+  geom_hline(yintercept=0, linetype='dashed', color='darkgrey') + geom_vline(xintercept=0,linetype='dashed', color='darkgrey') # + scale_color_manual(values=c("darkorange", "darkturquoise"))                     
+p.theta = ggplot2::ggplot(df.plot, aes(y=theta,x=NuInv))+ labs(title=" ")+theme(plot.title = element_text(hjust = 0.5))+
+  geom_point(aes(colour=estimate, shape=truth))+ 
+  geom_hline(yintercept=0, linetype='dashed', color='darkgrey') + geom_vline(xintercept=0,linetype='dashed', color='darkgrey')                
+
+p.theta
+
+
+
+
+
 
 
