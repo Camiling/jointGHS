@@ -265,7 +265,7 @@ boot_and_joint_parallel_iteration = function(X, S, n.vals, p, K, theta, sigma, L
 #' @param k the network to plot
 #' @param plot_boot should the Bayesian bootstrap sample posterior of some of the Lambda_sq be shown? If \code{FALSE}, the jointGHS networks are visualized instead
 #' @param edges the edges for which to show the Bayesian bootstrap posterior distribution. An matrix with \eqn{2} columns. If not specified, \eqn{15} edges are selected at random amongst the infererred jointGHS edge set
-#' @param quantiles the quantiles to show when plotting the Bayesian bootstrap posterior distribution of the local scale parameters
+#' @param percentile the percentile to show when plotting the Bayesian bootstrap posterior distribution of the local scale parameters.
 #' @param boot_lambda are we interested in the distribution of \code{Lambda_sq}?
 #' @param show_single should the estimate from the single network analysis be included as a bar?
 #' @param true_theta if provided, the 'true' value of \code{theta} to include as a bar in the plot
@@ -273,8 +273,9 @@ boot_and_joint_parallel_iteration = function(X, S, n.vals, p, K, theta, sigma, L
 #' @seealso \code{\link{jointGHS}}, \code{\link{print.jointGHS}}
 #' 
 #' @export 
-plot.jointGHS = function(x, k=1, plot_boot=TRUE, edges = NA, quantiles = c(0.025, 0.975), boot_lambda=FALSE, show_single=FALSE, true_theta=NULL){
+plot.jointGHS = function(x, k=1, plot_boot=TRUE, edges = NA, percentile=95, quantiles = NULL, boot_lambda=FALSE, show_single=FALSE, true_theta=NULL){
   p = ncol(x$theta[[k]])
+  quantiles=c(0,percentile/100) # Show 0-quantile as well as percentile/100-quantile
   if(plot_boot){
     # If no specific edges are requested, sample 15 edges at random from the set of edges identified by jointGHS
     if(any(is.na(edges))){ 
@@ -329,8 +330,8 @@ plot.jointGHS = function(x, k=1, plot_boot=TRUE, edges = NA, quantiles = c(0.025
         ggplot2::geom_histogram(ggplot2::aes(y=..density..),color='deepskyblue',fill='deepskyblue',bins=50) + ggplot2::theme(legend.position ="none") + 
         ggplot2::geom_density(alpha=.2, color = 'grey30',fill="deepskyblue")+
         ggplot2::geom_vline(ggplot2::aes(xintercept=x$Lambda_sq[[k]][edges[j,1],edges[j,2]]),color="darkolivegreen3", size=0.5)+
-        ggplot2::geom_vline(ggplot2::aes(xintercept=quantile(lambdas[j,],quantiles[2])),color="maroon2", linetype="dashed", size=0.5)+
-        ggplot2::geom_vline(ggplot2::aes(xintercept=quantile(lambdas[j,],quantiles[1])),color="maroon2", linetype="dashed", size=0.5)+
+        ggplot2::geom_vline(ggplot2::aes(xintercept=sign(mean(sign(lambdas[j,])))*quantile(abs(lambdas[j,]),quantiles[2])),color="maroon2", linetype="dashed", size=0.5)+
+        ggplot2::geom_vline(ggplot2::aes(xintercept=sign(mean(sign(lambdas[j,])))*quantile(abs(lambdas[j,]),quantiles[1])),color="maroon2", linetype="dashed", size=0.5)+
         {if(show_single) ggplot2::geom_vline(ggplot2::aes(xintercept=x$Lambda_sq_single[[k]][edges[j,1],edges[j,2]]),color="darkorange", linetype="solid", size=0.5)}+
         {if(!is.null(true_theta)) ggplot2::geom_vline(ggplot2::aes(xintercept=true_theta[edges[j,1],edges[j,2]]),color="aquamarine", linetype="solid", size=0.5)})
     
@@ -343,7 +344,7 @@ plot.jointGHS = function(x, k=1, plot_boot=TRUE, edges = NA, quantiles = c(0.025
       else if(show_single | !is.null(true_theta)){
         df = data.frame(1:15)
       }
-      names.all = c(rep('jointGHS estimate',5),rep(paste0(100*abs(diff(quantiles)),'% credible interval'),5))
+      names.all = c(rep('jointGHS estimate',5),rep(paste0(quantiles[1], ' and ', quantiles[2]*100 ,'% empirical percentiles'),5))
       if(show_single) names.all = c(names.all, rep('single estimate',5))
       if(!is.null(true_theta)) names.all =c(names.all, rep('truth',5))
       df[,2]= factor(names.all)
@@ -393,7 +394,7 @@ plot.jointGHS = function(x, k=1, plot_boot=TRUE, edges = NA, quantiles = c(0.025
 #' @param x an object with S3 class \code{"jointGHS"}
 #' @param k the network to print the results for
 #' @param edges the edges for which to show the Bayesian bootstrap posterior distribution. A matrix with \eqn{2} columns, or alternatively the string \code{'all'}. If not provided, \eqn{16} edges are selected at random amongst the infererred jointGHS edge set
-#' @param quantiles the quantiles to show when plotting the Bayesian bootstrap posterior distribution of the local scale parameters
+#' @param percentile the empirical percentile of the Bayesian bootstrap posterior distribution of the local scale parameters we want to show. Can also be a vector of length \eqn{2} for two-sided intervals
 #' @param return_df should the results be returned as a data frame? Default \code{FALSE}
 #' @param boot_lambda are we interested in the distribution of \code{Lambda_sq}?
 #'
@@ -402,8 +403,19 @@ plot.jointGHS = function(x, k=1, plot_boot=TRUE, edges = NA, quantiles = c(0.025
 #' @seealso \code{\link{jointGHS}}, \code{\link{plot.jointGHS}}
 #' 
 #' @export 
-print.jointGHS = function(x, k=1, edges = NA, quantiles = c(0.025, 0.975), return_df=F, boot_lambda=FALSE){
+print.jointGHS = function(x, k=1, edges = NA, percentile = 95, return_df=F, boot_lambda=FALSE){
   p = ncol(x$theta[[k]])
+  if(length(percentile)==2){
+    quantiles=c(percentile[1]/100, percentile[2]/100)
+    onesided=F
+  }
+  else if(length(percentile)==1){
+    quantiles = percentile/100
+    onesided=T
+  }
+  else{
+    stop('percentile must be of length 1 or 2')
+  }
   # If no specific edges are requested, sample 16 edges at random from the set of edges identified by jointGHS
   if(any(is.na(edges))){ # Find all edges
     theta = x$theta[[k]]
@@ -435,37 +447,65 @@ print.jointGHS = function(x, k=1, edges = NA, quantiles = c(0.025, 0.975), retur
   lambdas = matrix(0,n.edgepairs,B)
   var.name = ifelse(boot_lambda==T, 'Lambda_sq', 'theta')
   cat(paste0('\nCHECK PARAMETERS OF IDENTIFIED EDGES IN NETWORK k=',k, '\n'))
-  cat('==========================================================================================\n')
+  if(onesided) partbar = '==========================================================================================\n'
+  else partbar = '======================================================================================================================\n'
+  cat(partbar)
   cat(paste0(var.name,' checked against its single-network Bayesian bootstrap distribution \n'))
-  cat('==========================================================================================\n')
+  cat(partbar)
   df = data.frame()
   edges.outside=c()
   for (e in 1:n.edgepairs){
     lambdas[e,] = unlist(lapply(x$Lambda_sq_boot, FUN= function(s) ifelse(boot_lambda, s[[k]][edges[e,1],edges[e,2]], cov2cor(s[[k]])[edges[e,1],edges[e,2]] )))
     joint.est = ifelse(boot_lambda, x$Lambda_sq[[k]][edges[e,1],edges[e,2]], cov2cor(x$Lambda_sq[[k]])[edges[e,1],edges[e,2]])
-    quant1 = quantile(lambdas[e,],quantiles[1])
-    quant2 = quantile(lambdas[e,],quantiles[2])
     df[e,1] = paste0("(", edges[e,1], ",", edges[e,2],")")
     df[e,2] = round(joint.est,4)
-    df[e,3] =  round(quant1,4)
-    df[e,4] =  round(quant2,4)
-    if(df[e,2] < df[e,3] | df[e,2] > df[e,4]){
-      df[e,5] = '*'
-      edges.outside = c(edges.outside,e)
+    if(onesided){
+      quant1 =  sign(mean(sign(lambdas[e,])))*quantile(abs(lambdas[e,]),quantiles) # Get the right sign
+      df[e,3] =  round(quant1,4)
+      if(abs(df[e,2]) > abs(df[e,3]) | sign(df[e,2]) != sign(df[e,3])){ # Must have the same sign
+        df[e,4] = '*'
+        edges.outside = c(edges.outside,e)
+      }
+      else{
+        df[e,4] = ''
+      }
     }
     else{
-      df[e,5] = ''
+      quant1 = sign(mean(sign(lambdas[e,])))*quantile(abs(lambdas[e,]),quantiles[1])
+      quant2 = sign(mean(sign(lambdas[e,])))*quantile(abs(lambdas[e,]),quantiles[2])
+      df[e,3] =  round(quant1,4)
+      df[e,4] =  round(quant2,4)
+      if(abs(df[e,2]) < abs(df[e,3]) | abs(df[e,2]) > abs(df[e,4]) | !(sign(df[e,2]) %in% c(sign(df[e,3]), sign(df[e,4]))) ){ # Must have the same sign too
+        df[e,5] = '*'
+        edges.outside = c(edges.outside,e)
+      }
+      else{
+        df[e,5] = ''
+      }
     }
-  }
-  names(df) = c('Edge', '\ \ \ jointGHS estimate',paste0('\ \ \ \ \  ',quantiles[1],'-quantile'), paste0('\ \ \ \ \ \ ',quantiles[2],'-quantile'), '')
-  print(format(df,justify='left',width=20), right=F)
-  cat('==========================================================================================\n')
-  cat(paste0('\'*\' Outside ',100*abs(diff(quantiles)),'% credible interval\n\n'))
-  cat(paste0('Edge parameters outside intervals: ', length(edges.outside), ' (', 100*round(length(edges.outside)/n.edgepairs,3),'%) \n'))
-  cat('Expected number of edge parameters outside intervals: ', round((1-abs(diff(quantiles)))*n.edgepairs), ' (', round(100-100*abs(diff(quantiles)),3),'%) \n\n')
 
+  }
+  if(onesided){
+    names(df) = c('Edge', '\ \ \ \ \ \ \ \ \  jointGHS estimate',paste0('\ \ \ ',quantiles*100,'% empirical percentile'),  '')
+  }
+  else{
+    names(df) = c('Edge', '\ \ \ \ \ \ \ \ \  jointGHS estimate',paste0('\ \ \  ',quantiles[1]*100,'% empirical percentile'), paste0('\ \ \ ',quantiles[2]*100,'% empirical percentile'), '')
+  }
+  print(format(df,justify='left',width=27), right=F)
+  cat(partbar)
+  if(onesided) { 
+    cat(paste0('\'*\' Larger than ',100*quantiles,'% empirical percentile in absolute value \n\n')) 
+    cat(paste0('Edge parameters larger than ',100*quantiles,'% empirical percentile in absolute value: ', length(edges.outside), ' (', 100*round(length(edges.outside)/n.edgepairs,3),'%) \n'))
+    cat('Expected number of edge parameters larger than ', 100*quantiles,'% empirical percentile in absolute value:', round((1-quantiles)*n.edgepairs), ' (', round(100-100*quantiles,3),'%) \n\n')
+    names(df) = c('Edge', 'jointGHS_estimate','percentile', 'is_outside')
+  }
+  else {
+    cat(paste0('\'*\' Outside ',100*abs(diff(quantiles)),'% empirical interval \n\n'))
+    cat(paste0('Edge parameters outside interval: ', length(edges.outside), ' (', 100*round(length(edges.outside)/n.edgepairs,3),'%) \n'))
+    cat('Expected number of edge parameters outside interval: ', round((1-abs(diff(quantiles)))*n.edgepairs), ' (', round(100-100*abs(diff(quantiles)),3),'%) \n\n')
+    names(df) = c('Edge', 'jointGHS_estimate','percentile1', 'percentile2', 'is_outside')
+  }
   # Return results as a data frame
-  names(df) = c('Edge', 'jointGHS_estimate','quantile1', 'quantile2', 'is_outside')
   df$is_outside = df$is_outside == '*'
   if(return_df==T) return(df)
 }

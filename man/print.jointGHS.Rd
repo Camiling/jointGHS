@@ -8,7 +8,7 @@
   x,
   k = 1,
   edges = NA,
-  quantiles = c(0.025, 0.975),
+  percentile = 95,
   return_df = F,
   boot_lambda = FALSE
 )
@@ -20,7 +20,7 @@
 
 \item{edges}{the edges for which to show the Bayesian bootstrap posterior distribution. A matrix with \eqn{2} columns, or alternatively the string \code{'all'}. If not provided, \eqn{16} edges are selected at random amongst the infererred jointGHS edge set}
 
-\item{quantiles}{the quantiles to show when plotting the Bayesian bootstrap posterior distribution of the local scale parameters}
+\item{percentile}{the empirical percentile of the Bayesian bootstrap posterior distribution of the local scale parameters we want to show. Can also be a vector of length \eqn{2} for two-sided intervals}
 
 \item{return_df}{should the results be returned as a data frame? Default \code{FALSE}}
 

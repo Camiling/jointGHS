@@ -9,7 +9,8 @@
   k = 1,
   plot_boot = TRUE,
   edges = NA,
-  quantiles = c(0.025, 0.975),
+  percentile = 95,
+  quantiles = NULL,
   boot_lambda = FALSE,
   show_single = FALSE,
   true_theta = NULL
@@ -24,7 +25,7 @@
 
 \item{edges}{the edges for which to show the Bayesian bootstrap posterior distribution. An matrix with \eqn{2} columns. If not specified, \eqn{15} edges are selected at random amongst the infererred jointGHS edge set}
 
-\item{quantiles}{the quantiles to show when plotting the Bayesian bootstrap posterior distribution of the local scale parameters}
+\item{percentile}{the percentile to show when plotting the Bayesian bootstrap posterior distribution of the local scale parameters.}
 
 \item{boot_lambda}{are we interested in the distribution of \code{Lambda_sq}?}
 
