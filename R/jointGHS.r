@@ -24,6 +24,7 @@
 #' @param B if \code{boot_check=TRUE}, the number of bootstrap samples to draw
 #' @param nCores if \code{boot_check=TRUE}, how many cores should be used for the bootstrap sampling?
 #' @param boot_lambda should \code{Lambda_sq} be bootstrapped? If \code{FALSE}, \code{theta} is bootstrapped instead
+#' @param stop_overflow should measures be taken to avoid overflow? Only necessary for very dense graphs with many large nonzero elements.
 #' 
 #' @return a fitted \code{jointGHS} object
 #' 
@@ -35,7 +36,7 @@
 #' 
 jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, method= 'ECM', AIC_selection=TRUE, AIC_eps = 1e-1, tau_sq_min =1e-3, tau_sq_stepsize= NULL,tau_sq_max=20,
                      epsilon = 1e-5, maxitr = 1e3, scale=TRUE, verbose=TRUE, savepath = FALSE, save_Q = FALSE, fix_tau = FALSE, boot_check=FALSE,
-                     B=100,nCores=5, boot_lambda=TRUE){
+                     B=100,nCores=5, boot_lambda=TRUE, stop_overflow=FALSE){
 
   # If only one data set is provided, single-network version is used instead.
   if(!is.list(X)){
@@ -46,7 +47,7 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
     cat('Single data set provided: performing single-network ECM for GHS \n')
     out <- fastGHS::fastGHS(X, theta=theta, sigma=sigma, Lambda_sq = Lambda_sq, tau_sq = tau_sq, method = method, AIC_selection = AIC_selection, AIC_eps = AIC_eps,
                             tau_sq_min=tau_sq_min, tau_sq_stepsize = tau_sq_stepsize, tau_sq_max=tau_sq_max,
-                            epsilon = epsilon, maxitr = maxitr, scale=scale, verbose = verbose, savepath=savepath,save_Q=save_Q, fix_tau = fix_tau)
+                            epsilon = epsilon, maxitr = maxitr, scale=scale, verbose = verbose, savepath=savepath,save_Q=save_Q, fix_tau = fix_tau, stop_overflow = stop_overflow)
     class(out) = "jointGHS"
     return(out)
   }
@@ -155,7 +156,7 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
     res.list = foreach (k=1:K) %dopar% {
       fastGHS::fastGHS(X[[k]], theta=theta[,,k], sigma=sigma[,,k], Lambda_sq = Lambda_sq[,,k], tau_sq = tau_sq[k], method = method, 
                        AIC_selection=AIC_selection, AIC_eps = AIC_eps, tau_sq_min =tau_sq_min, tau_sq_stepsize= tau_sq_stepsize,tau_sq_max=tau_sq_max,
-                       epsilon = epsilon, maxitr = maxitr, verbose = F);
+                       epsilon = epsilon, maxitr = maxitr, verbose = F, stop_overflow = stop_overflow);
     }
     foreach::registerDoSEQ()
     # New tau_sq values
@@ -239,7 +240,7 @@ boot_and_joint_parallel_iteration = function(X, S, n.vals, p, K, theta, sigma, L
     # Use Bayesian bootstrap with weights sampled from the Dirichlet distribution
     res = lapply(1:K, FUN = function(k) fastGHS::fastGHS(X[[k]], theta=theta[,,k], sigma=sigma[,,k], Lambda_sq = Lambda_sq[,,k], tau_sq = tau_sq[k], method = method, 
                            AIC_selection=T, AIC_eps = AIC_eps, tau_sq_min = tau_sq_min, tau_sq_stepsize= tau_sq_stepsize, tau_sq_max = tau_sq_max,
-                           epsilon = epsilon, maxitr = maxitr, verbose = F, weights=c(gtools::rdirichlet(1, rep(1,nrow(X[[k]])))) ))
+                           epsilon = epsilon, maxitr = maxitr, verbose = F, weights=c(gtools::rdirichlet(1, rep(1,nrow(X[[k]])))), stop_overflow = stop_overflow ))
     # Save only relevant output
     out = list()
     if(boot_lambda){

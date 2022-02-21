@@ -26,7 +26,8 @@ jointGHS(
   boot_check = FALSE,
   B = 100,
   nCores = 5,
-  boot_lambda = TRUE
+  boot_lambda = TRUE,
+  stop_overflow = FALSE
 )
 }
 \arguments{
@@ -73,6 +74,8 @@ jointGHS(
 \item{nCores}{if \code{boot_check=TRUE}, how many cores should be used for the bootstrap sampling?}
 
 \item{boot_lambda}{should \code{Lambda_sq} be bootstrapped? If \code{FALSE}, \code{theta} is bootstrapped instead}
+
+\item{stop_overflow}{should measures be taken to avoid overflow? Only necessary for very dense graphs with many large nonzero elements.}
 }
 \value{
 a fitted \code{jointGHS} object
