@@ -28,7 +28,7 @@ the degree that it improves the network estimates. The method takes a
 list of data matrices for which separate graphs are to be inferred, and
 shares edge wise information between them through a common edge-specific
 latent variable. The resulting method captures what is common between
-the networks while preserving their differences, and can be ued
+the networks while preserving their differences, and can be used
 agnostically for any level of similarity between the networks.
 
 ## Installation
