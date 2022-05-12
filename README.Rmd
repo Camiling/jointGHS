@@ -75,17 +75,17 @@ The data is generated using the R package `huge` (@huge), as it includes functio
 ```{r, warning = FALSE}
 #  example 1: scale-free data where the data sets are from the same distribution
 set.seed(123)
-n1 = 60 # let there be different number of samples in each data set
-n2 = 50 
-p <- 20 # Still very high-dimensional: 190 potential edges 
+n1 <- 60 # let there be different number of samples in each data set
+n2 <- 50
+p <- 20 # Still very high-dimensional: 190 potential edges
 dat <- huge::huge.generator(n = n1, d = p, graph = "scale-free")
 dat$sparsity # true sparsity level
 prec.mat <- dat$omega # the true precision matrix of both data sets
-x1 = MASS::mvrnorm(n1, mu=rep(0,p),Sigma=dat$sigma) # data set 1
-x2 = MASS::mvrnorm(n2, mu=rep(0,p),Sigma=dat$sigma) # data set 2
-Y=list(x1, x2)
-res <- jointGHS(Y, epsilon = 1e-3, AIC_eps = 1e-3) 
-adj.mat1 <- abs(cov2cor(res$theta[[1]])) > 1e-5  # the estimated adjacency matrix of graph 1
+x1 <- MASS::mvrnorm(n1, mu = rep(0, p), Sigma = dat$sigma) # data set 1
+x2 <- MASS::mvrnorm(n2, mu = rep(0, p), Sigma = dat$sigma) # data set 2
+Y <- list(x1, x2)
+res <- jointGHS(Y, epsilon = 1e-3, AIC_eps = 1e-3)
+adj.mat1 <- abs(cov2cor(res$theta[[1]])) > 1e-5 # the estimated adjacency matrix of graph 1
 adj.mat2 <- abs(cov2cor(res$theta[[2]])) > 1e-5 # the estimated adjacency matrix of graph 2
 sparsity(adj.mat1) # the sparsities of the estimated precision matrices
 sparsity(adj.mat2)
@@ -93,11 +93,11 @@ sparsity(adj.mat2)
 precision(abs(prec.mat) > 1e-7, adj.mat1)
 precision(abs(prec.mat) > 1e-7, adj.mat2)
 # Save for plotting
-adj.mat1.1 = adj.mat1
-adj.mat2.1 = adj.mat2
+adj.mat1.1 <- adj.mat1
+adj.mat2.1 <- adj.mat2
 # example 2: scale-free data where where the data sets are from completely unrelated distributions
 set.seed(123)
-n1 <- 60 
+n1 <- 60
 n2 <- 50
 p <- 20
 dat1 <- huge::huge.generator(n = n1, d = p, graph = "scale-free")
@@ -106,11 +106,11 @@ dat1$sparsity # true sparsity level for graph 1
 dat2$sparsity # true sparsity level for graph 2
 prec.mat1 <- dat1$omega # the true precision matrix of data set 1
 prec.mat2 <- dat2$omega # the true precision matrix of data set 2
-x1 = MASS::mvrnorm(n1, mu=rep(0,p),Sigma=dat1$sigma)
-x2 = MASS::mvrnorm(n2, mu=rep(0,p),Sigma=dat2$sigma)
-Y = list(x1, x2)
+x1 <- MASS::mvrnorm(n1, mu = rep(0, p), Sigma = dat1$sigma)
+x2 <- MASS::mvrnorm(n2, mu = rep(0, p), Sigma = dat2$sigma)
+Y <- list(x1, x2)
 res <- jointGHS(Y, epsilon = 1e-3, AIC_eps = 1e-3)
-adj.mat1 <- abs(cov2cor(res$theta[[1]])) > 1e-5  # the estimated adjacency matrix of graph 1
+adj.mat1 <- abs(cov2cor(res$theta[[1]])) > 1e-5 # the estimated adjacency matrix of graph 1
 adj.mat2 <- abs(cov2cor(res$theta[[2]])) > 1e-5 # the estimated adjacency matrix of graph 2
 sparsity(adj.mat1) # the sparsities of the estimated precision matrices
 sparsity(adj.mat2) # Very sparse as little data is available, and no shared information
@@ -125,11 +125,11 @@ The resulting jointGHS graphs can be visualised with functions from the `network
 
 ```{r,fig.align='center', out.width='60%',results='hide',warning=FALSE}
 set.seed(1234)
-net1 =network::network(adj.mat1.1)
-net2 =network::network(adj.mat2.1)
-g1 = GGally::ggnet2(net1,alpha=0.9,color = 'darkblue')
-g2 = GGally::ggnet2(net2,alpha=0.9,color = 'darkblue')
-ggpubr::ggarrange(g1,g2,ncol=2,nrow=1)
+net1 <- network::network(adj.mat1.1)
+net2 <- network::network(adj.mat2.1)
+g1 <- GGally::ggnet2(net1, alpha = 0.9, color = "darkblue")
+g2 <- GGally::ggnet2(net2, alpha = 0.9, color = "darkblue")
+ggpubr::ggarrange(g1, g2, ncol = 2, nrow = 1)
 ```
 
 
