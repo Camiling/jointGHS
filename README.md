@@ -122,6 +122,9 @@ precision(abs(prec.mat) > 1e-7, adj.mat1)
 #> [1] 1
 precision(abs(prec.mat) > 1e-7, adj.mat2)
 #> [1] 1
+# Save for plotting
+adj.mat1.1 = adj.mat1
+adj.mat2.1 = adj.mat2
 # example 2: scale-free data where where the data sets are from completely unrelated distributions
 set.seed(123)
 n1 <- 60 
@@ -175,8 +178,8 @@ The resulting jointGHS graphs can be visualised with functions from the
 
 ``` r
 set.seed(1234)
-net1 =network::network(adj.mat1)
-net2 =network::network(adj.mat2)
+net1 =network::network(adj.mat1.1)
+net2 =network::network(adj.mat2.1)
 g1 = GGally::ggnet2(net1,alpha=0.9,color = 'darkblue')
 #> Registered S3 method overwritten by 'GGally':
 #>   method from   
