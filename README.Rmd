@@ -16,7 +16,6 @@ knitr::opts_chunk$set(
 library(fastGHS)
 library(jointGHS)
 library(foreach)
-library(tailoredGlasso)
 ```
 
 

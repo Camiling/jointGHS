@@ -83,18 +83,18 @@ known trait in many real-life networks such as genomic networks
 ``` r
 #  example 1: scale-free data where the data sets are from the same distribution
 set.seed(123)
-n1 = 60 # let there be different number of samples in each data set
-n2 = 50 
-p <- 20 # Still very high-dimensional: 190 potential edges 
+n1 <- 60 # let there be different number of samples in each data set
+n2 <- 50
+p <- 20 # Still very high-dimensional: 190 potential edges
 dat <- huge::huge.generator(n = n1, d = p, graph = "scale-free")
 #> Generating data from the multivariate normal distribution with the scale-free graph structure....done.
 dat$sparsity # true sparsity level
 #> [1] 0.1
 prec.mat <- dat$omega # the true precision matrix of both data sets
-x1 = MASS::mvrnorm(n1, mu=rep(0,p),Sigma=dat$sigma) # data set 1
-x2 = MASS::mvrnorm(n2, mu=rep(0,p),Sigma=dat$sigma) # data set 2
-Y=list(x1, x2)
-res <- jointGHS(Y, epsilon = 1e-3, AIC_eps = 1e-3) 
+x1 <- MASS::mvrnorm(n1, mu = rep(0, p), Sigma = dat$sigma) # data set 1
+x2 <- MASS::mvrnorm(n2, mu = rep(0, p), Sigma = dat$sigma) # data set 2
+Y <- list(x1, x2)
+res <- jointGHS(Y, epsilon = 1e-3, AIC_eps = 1e-3)
 #> Itr = 1 Max diff = 1.33782
 #> Itr = 2 Max diff = 0.516578
 #> Itr = 3 Max diff = 0.252108
@@ -111,7 +111,7 @@ res <- jointGHS(Y, epsilon = 1e-3, AIC_eps = 1e-3)
 #> Itr = 14 Max diff = 0.00408906
 #> Itr = 15 Max diff = 0.000952573
 #>  done
-adj.mat1 <- abs(cov2cor(res$theta[[1]])) > 1e-5  # the estimated adjacency matrix of graph 1
+adj.mat1 <- abs(cov2cor(res$theta[[1]])) > 1e-5 # the estimated adjacency matrix of graph 1
 adj.mat2 <- abs(cov2cor(res$theta[[2]])) > 1e-5 # the estimated adjacency matrix of graph 2
 sparsity(adj.mat1) # the sparsities of the estimated precision matrices
 #> [1] 0.02105263
@@ -123,11 +123,11 @@ precision(abs(prec.mat) > 1e-7, adj.mat1)
 precision(abs(prec.mat) > 1e-7, adj.mat2)
 #> [1] 1
 # Save for plotting
-adj.mat1.1 = adj.mat1
-adj.mat2.1 = adj.mat2
+adj.mat1.1 <- adj.mat1
+adj.mat2.1 <- adj.mat2
 # example 2: scale-free data where where the data sets are from completely unrelated distributions
 set.seed(123)
-n1 <- 60 
+n1 <- 60
 n2 <- 50
 p <- 20
 dat1 <- huge::huge.generator(n = n1, d = p, graph = "scale-free")
@@ -140,9 +140,9 @@ dat2$sparsity # true sparsity level for graph 2
 #> [1] 0.1
 prec.mat1 <- dat1$omega # the true precision matrix of data set 1
 prec.mat2 <- dat2$omega # the true precision matrix of data set 2
-x1 = MASS::mvrnorm(n1, mu=rep(0,p),Sigma=dat1$sigma)
-x2 = MASS::mvrnorm(n2, mu=rep(0,p),Sigma=dat2$sigma)
-Y = list(x1, x2)
+x1 <- MASS::mvrnorm(n1, mu = rep(0, p), Sigma = dat1$sigma)
+x2 <- MASS::mvrnorm(n2, mu = rep(0, p), Sigma = dat2$sigma)
+Y <- list(x1, x2)
 res <- jointGHS(Y, epsilon = 1e-3, AIC_eps = 1e-3)
 #> Itr = 1 Max diff = 1.23045
 #> Itr = 2 Max diff = 0.519223
@@ -160,7 +160,7 @@ res <- jointGHS(Y, epsilon = 1e-3, AIC_eps = 1e-3)
 #> Itr = 14 Max diff = 0.00227214
 #> Itr = 15 Max diff = 0.000390406
 #>  done
-adj.mat1 <- abs(cov2cor(res$theta[[1]])) > 1e-5  # the estimated adjacency matrix of graph 1
+adj.mat1 <- abs(cov2cor(res$theta[[1]])) > 1e-5 # the estimated adjacency matrix of graph 1
 adj.mat2 <- abs(cov2cor(res$theta[[2]])) > 1e-5 # the estimated adjacency matrix of graph 2
 sparsity(adj.mat1) # the sparsities of the estimated precision matrices
 #> [1] 0.02631579
@@ -178,14 +178,14 @@ The resulting jointGHS graphs can be visualised with functions from the
 
 ``` r
 set.seed(1234)
-net1 =network::network(adj.mat1.1)
-net2 =network::network(adj.mat2.1)
-g1 = GGally::ggnet2(net1,alpha=0.9,color = 'darkblue')
+net1 <- network::network(adj.mat1.1)
+net2 <- network::network(adj.mat2.1)
+g1 <- GGally::ggnet2(net1, alpha = 0.9, color = "darkblue")
 #> Registered S3 method overwritten by 'GGally':
 #>   method from   
 #>   +.gg   ggplot2
-g2 = GGally::ggnet2(net2,alpha=0.9,color = 'darkblue')
-ggpubr::ggarrange(g1,g2,ncol=2,nrow=1)
+g2 <- GGally::ggnet2(net2, alpha = 0.9, color = "darkblue")
+ggpubr::ggarrange(g1, g2, ncol = 2, nrow = 1)
 ```
 
 <img src="man/figures/README-unnamed-chunk-5-1.png" width="60%" style="display: block; margin: auto;" />

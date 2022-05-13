@@ -1,0 +1,238 @@
+---
+title: "`jointGHS`: the joint graphical horseshoe for multiple network inference"
+author: "Camilla Lingjaerde"
+output: rmarkdown::html_vignette
+bibliography: ../inst/REFERENCES.bib
+vignette: >
+  %\VignetteIndexEntry{`jointGHS`: the joint graphical horseshoe for multiple network inference}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 3
+)
+```
+
+```{r setup, include=FALSE, warning=FALSE}
+library(jointGHS)
+library(foreach)
+```
+ 
+
+ 
+> [Introduction](#intro)
+
+> [Overview of package](#overview)
+
+> [The joint graphical horseshoe](#jointGHS)
+
+> [Examples](#ex)
+
+
+<a id="intro"></a>
+
+
+# Introduction
+ 
+The `jointGHS` package implements the joint graphical horseshoe for multiple network estimation, in the setting of Gaussian graphical models. The package provides a scalable expectation conditional maximisation (ECM) algorithm for obtaining the posterior mode of the precision matrices (inverse covariance matrices). The non-zero off-diagonal elements of the resulting matrices correspond to the edges identified. The method borrows information between networks in order to increase statistical power, while ensuring information is only shared to the degree that it improves the network estimates. The method takes a list of data matrices for which separate graphs are to be inferred, and shares edge wise information between them through a common edge-specific latent variable. The resulting method captures what is common between the networks while preserving their differences, and can be used agnostically for any level of similarity between the networks. 
+
+In this vignette, a brief introduction to Gaussian graphical network models, as well as the joint graphical horseshoe, is given. A description of the methodology of jointGHS is then given, followed by an example of the package usage. 
+
+
+<a id="overview"></a>
+
+<br>
+
+# Overview of package
+
+## Functions
+
+Here is an overview of the main functions. You can read their documentation and see examples 
+with `?function_name`.
+
+----------------------------- ------------------------------------------------------
+Function Name                 Description
+----------------------------- ------------------------------------------------------
+`jointGHS`                    Performs jointGHS.
+
+`sparsity`                    Finds the sparsity of a graph.
+
+`precision`                   Finds the precision of an estimated graph. 
+
+`recall`                      Finds the recall of an estimated graph.
+
+`confusion.matrix`            Finds the confusion matrix between a graph and its estimate.
+----------------------------- --------------------------------------------------
+
+: Main functions in the `jointGHS` package.
+
+
+
+<a id="jointGHS"></a>
+
+<br>
+
+# The joint graphical horseshoe
+
+ 
+ 
+## Gaussian graphical network models
+
+Network models are popular tools for modelling interactions and associations. While the edges of correlation networks are indicative of direct associations, correlation is not a neccessary or suffient condition (@chen2018) for a direct association. In a conditional independence network, the effect of other variables (nodes) is adjusted for. In such a graph, there is an edge between two nodes if and only if there is a direct association between them when conditioning upon the rest of the variables in the graph.
+
+Inferring a conditional independence network requires a measure of the conditional dependence between all pairs of nodes or variables. Given that each node is associated with a measurable *node attribute*, one possible approach is to assume a Gaussian graphical model, where the multivariate random vector $(X_1, \ldots, X_{p})^T$ of node attributes is assumed to be multivariate Gaussian with mean vector $\boldsymbol{\mu}$ and covariance matrix $\boldsymbol{\Sigma}$. A conditional independence network may then be determined from the inverse covariance matrix, or *precision matrix*, $\boldsymbol{\Theta}=\boldsymbol{\Sigma}^{-1}$. Given the entries $\theta_{ij}$ of $\boldsymbol{\Theta}$, the conditional (or partial) correlation between nodes, or variables, $i$ and $j$ conditioned upon all others is given by 
+
+$$
+\rho_{ij\vert V\backslash \{i,j\} } = - \frac{\theta_{ij}}{\sqrt{\theta_{ii}\theta_{jj}}}
+$$
+where $V$ is the set of all node pairs. Since correlation equal to zero is equivalent to independence for Gaussian variables, a conditional independence graph may be constructed by determining the non-zero entries of the precision matrix $\boldsymbol{\Theta}$ and assigning edges to the corresponding node pairs. The resulting model is a *Gaussian graphical model*, with the edges representing conditional dependence.
+
+Due to the high-dimensional problem frequently encountered in real-life data, where the number of observations $n$ is much smaller than the number of parameters to estimate (in this case elements in $\boldsymbol{\Theta}$), the sample covariance matrix is often not of full rank. Thus, the inverse covariance matrix is often not possible to compute directly, and alternative approaches are necessary. 
+
+The *sparsity* of a graph is the number of edges divided by the maximal number of edges the graph can have. If the sparsity of a graph is sufficiently small, $\boldsymbol{\Theta}$ has enough zero elements to be of full rank and thus invertible and well defined. We then say that the graph, or precision matrix, is sparse. 
+
+
+## The joint graphical horseshoe model formulation
+
+
+If one is interested in the graph structures of several data types or groups, and there is a one-to-one correspondence between the nodes, one possibility is to infer separate networks for each data type. However, if the data types are related or have similar underlying graph structures, a joint modelling approach can greatly increase statistical power. This package implements the joint graphical horseshoe of Lingjaerde et al. (2022), in which one borrows strength across the data types to estimate multiple graphical models at any level of similarity. This results in one network for each data type, where the network inference will improve if the different types of data are informative for each other. 
+
+The joint graphical horseshoe is a generalized method for jointly estimating Gaussian graphical models on multiple types or sets of data, and extends the graphical horseshoe of @li2019graphical to a multiple network setting. For $K$ groups, we want to estimate the set of precision matrices $\{\boldsymbol{\Theta}^{(1)},\ldots, \boldsymbol{\Theta}^{(K)}\}$. It is assumed that the set of $\sum_{k=1}^K n_k$ observations are independent. 
+
+Given $K$ networks with $p$ nodes each, we let the $k^{\text{th}}$ network follow the hierarchical model 
+
+\begin{align}
+    \theta_{iik} &\propto 1, \nonumber\\
+    \theta_{ijk\vert i<j} &\sim \mathcal{N}(0,\lambda_{ijk}^2\tau_k^2), \nonumber\\
+    \lambda_{ijk\vert i<j} &\sim \text{C}^+(0,1), \nonumber\\
+    \tau_k &\sim \text{C}^+(0,1),\nonumber
+\end{align}
+%
+for $k=1,\ldots, K$ and $1\leq i, j \leq p$. This is the standard graphical horseshoe model of @li2019graphical for each network separately. To share information across networks, we introduce the latent variables $\nu_{ij\vert i<j}$ and $\xi_k$ and write
+
+\begin{align}
+    \lambda_{ijk}^2  \vert \nu_{ij} & \sim \text{InvGamma}(1/2, 1/\nu_{ij}), \nonumber \\
+    \nu_{ij} & \sim \text{InvGamma}(1/2, 1).\nonumber
+\end{align}
+%
+Thanks to these edge-specific common latent parameters, information can be shared between networks on the edge level. Because the amount of similarity encouraged is different for each edge, we avoid over shrinkage of non-zero precision matrix elements, allowing us to identify weak edges. Thanks to the heavy horseshoe tail, we can still identify edges on the individual network level even though no shared information is identified. This means that the joint graphical horseshoe can capture both network similarities and differences. 
+
+Deriving the full conditional posteriors (not shown here), we formulate an estimation conditional maximisation (ECM) algorithm for obtaining the posterior modes. The ECM algorith is ran until all precision matrix elements have converged, i.e. the difference from the last update is smaller than $\epsilon$. We suggest setting $\epsilon=0.001$. The resulting estimator borrows information across networks to increase statistical power while ensuring that information is only shared too the degree that it improves the network inference. 
+
+## Selecting the global shrinkage parameter 
+
+The $\tau_k$'s cannot be updated in the ECM approach like the other variables as it collapses to zero (@scott2010bayes). Instead, the parameter must be fixed in the algorithm. We select the $\tau_k^2$ of each network separately before running the joint analysis, using the AIC criterion for Gaussian graphical models (@akaike1973) which is not as conservative as the BIC (@schwarz1978BIC). For a given global shrinkage parameter $\tau_k^2$ in network $k$ and the resulting precision matrix estimate ${\widehat{\boldsymbol{\Theta}}_k}_{\tau_k^2}$ found by a single-network analysis, the AIC score is given by 
+
+$$
+\text{AIC}(\tau_k^2) = n_k \text{tr}(\boldsymbol{S}_k{\widehat{\boldsymbol{\Theta}}_k}_{\tau_k^2}) - n_k \log(\text{det}({\widehat{\boldsymbol{\Theta}}_k}_{\tau_k^2})) +  2\vert E_k \vert, \nonumber
+$$
+
+where tr is the trace, $\boldsymbol{S}_k = \boldsymbol{X}_k^T\boldsymbol{X}_k$ is the sample covariance matrix of group $k$, $|\cdot|$ denotes the determinant and $|E_k|$ is the number of edges in the corresponding graph. 
+
+For sufficiently small $\tau_k$, small increases lead to large changes in the AIC score. However, for sufficiently large values the AIC score stabilises as the global shrinkage parameter increases. Thus, instead of attempting to identify the globally AIC minimising value of $\tau_k^2$, which is computationally exhausting, we start with a small value and increase it until the AIC has stabilised. Formally, considering values of $\tau_k^2$ in a suitable grid $\{{\tau_k}_{\text{min}}^2, \ldots, {\tau_k}_{\text{max}}^2\}$ we select the ${\tau_k}_{\text{AIC}}^2$ given by 
+
+$$
+    {\tau_k}_{\text{AIC}}^2 = \text{arg min}_{{\tau_k}_m^2} \Big \{ \vert \text{AIC}({\tau_k}_m^2)-\text{AIC}({\tau_k}_{m-1}^2)  \vert  < \epsilon_{\text{AIC}} \Big \}
+$$
+for some convergence tolerance $\epsilon_{\text{AIC}}$. We suggest setting  $\epsilon_{\text{AIC}}=0.001$ for smaller problems ($p<100$), and $\epsilon_{\text{AIC}}=0.1$ for larger problems to speed up computations. The grid of $\tau_k$ values can be chosen by the user through the arguments \code{tau_sq_min}, \code{tau_sq_max} and \code{tau_sq_stepsize}, with the default grid being in $[0.001, 20]$.  
+
+
+## Bootstrapping procedure for posterior checks
+
+The joint graphical horseshoe adapts well to the level of similarity between networks, but it is not meant to be applied to a set with many highly similar networks and one unrelated or less similar network. In such a case, the highly similar networks might dominate the inference of the common latent variables $\nu_{ij}$. Due to the heavy tail of the horseshoe, when $1/\nu_{ij}$ is small, the local scales can adapt and identify edges individually on the network-level. However, a large $1/\nu_{ij}$ tends to lead to non-zero precision matrix elements for all networks.
+
+To account for this possibility, we propose a posterior check for evaluating whether the joint network estimate of a data set strongly contradicts its single network estimate, suggesting that its inclusion in the joint analysis should be reconsidered. This routine uses the Bayesian bootstrap (@rubin1981bayesian) and is implemented as an additional option in the main function \code{jointGHS}. To run this feature, set \code{boot_check=T}. The default number of bootstrap samples to draw is $B=100$ and the number of cores $5$, but also this can be determined by the user. The functions \code{print} and \code{plot} can be used on the resulting objects to obtain the bootstrapping results.
+
+
+## Summary
+
+For several sets of data with similar underlying graph structures, the joint graphical horseshoe can drastically improve the accuracy of inferred graphs compared to the ordinary graphical horseshoe applied to the data sets separately. The more similar the data sets/groups are, the larger is the benefit of a joint approach. The global scale parameters need to be selected to avoid under-selection, and we propose an AIC-based approach for this purpose. The resulting method successfully shares information between networks while capturing their differences, at any level of similarity between the networks. 
+
+
+
+<!---A large selected value indicates that there is evidence for strong similarity between the graphs, and that encouraging similarity between them will improve the model fit. A chosen value close to zero, on the other hand, indicates that there is no evidence for any similarities between the graphs, and that similarity encouragement is not useful and might in fact negatively affect the model fit. This interpretability is convenient, as the selected $\lambda_2$ can tell how similar the underlying graph structures of the data sets are. --->
+
+
+
+
+
+<a id="ex"></a>
+
+<br>
+
+# Examples
+
+The main function `jointGHS` takes a list of $K$ data matrices, each of dimension $n_k \times p$ where $n_k$ is the sample size of data set $k$, for which separate graphs are to be inferred. The methods estimates the posterior mode of each precision matrix in the joint graphical horseshoe. 
+
+The following examples show how `jointGHS` identifies the common edges for a set of $K=2$ graphs, as well as the individual edges on the network-level, and returns the resulting precision matrix estimates. One example with $K=2$ data sets drawn from the same distribution, and one with $K=2$ data sets drawn from completely unrelated distributions, is shown. In the first case, jointGHS identifies a large number of common edges. This results in high precision considering the high dimensionality of the problem. In the latter case, hardly any common edges are found and little similarity between the two graphs is encouraged. 
+
+The data is generated using the R package `huge` (@huge), as it includes functionality for generating data from a Gaussian graphical model. The networks we generate are *scale-free*, which is a known trait in many real-life networks such as genomic networks (@kolaczyk09).
+
+```{r, warning = FALSE}
+#  example 1: scale-free data where the data sets are from the same distribution
+set.seed(123)
+n1 <- 60 # let there be different number of samples in each data set
+n2 <- 50
+p <- 20 # Still very high-dimensional: 190 potential edges
+dat <- huge::huge.generator(n = n1, d = p, graph = "scale-free")
+dat$sparsity # true sparsity level
+prec.mat <- dat$omega # the true precision matrix of both data sets
+x1 <- MASS::mvrnorm(n1, mu = rep(0, p), Sigma = dat$sigma) # data set 1
+x2 <- MASS::mvrnorm(n2, mu = rep(0, p), Sigma = dat$sigma) # data set 2
+Y <- list(x1, x2)
+res <- jointGHS(Y, epsilon = 1e-3, AIC_eps = 1e-3)
+adj.mat1 <- abs(cov2cor(res$theta[[1]])) > 1e-5 # the estimated adjacency matrix of graph 1
+adj.mat2 <- abs(cov2cor(res$theta[[2]])) > 1e-5 # the estimated adjacency matrix of graph 2
+sparsity(adj.mat1) # the sparsities of the estimated precision matrices
+sparsity(adj.mat2)
+# Look at precision of inferred graphs
+precision(abs(prec.mat) > 1e-7, adj.mat1)
+precision(abs(prec.mat) > 1e-7, adj.mat2)
+# Save for plotting
+adj.mat1.1 <- adj.mat1
+adj.mat2.1 <- adj.mat2
+# example 2: scale-free data where where the data sets are from completely unrelated distributions
+set.seed(123)
+n1 <- 60
+n2 <- 50
+p <- 20
+dat1 <- huge::huge.generator(n = n1, d = p, graph = "scale-free")
+dat2 <- huge::huge.generator(n = n2, d = p, graph = "scale-free") # second graph is completely unrelated
+dat1$sparsity # true sparsity level for graph 1
+dat2$sparsity # true sparsity level for graph 2
+prec.mat1 <- dat1$omega # the true precision matrix of data set 1
+prec.mat2 <- dat2$omega # the true precision matrix of data set 2
+x1 <- MASS::mvrnorm(n1, mu = rep(0, p), Sigma = dat1$sigma)
+x2 <- MASS::mvrnorm(n2, mu = rep(0, p), Sigma = dat2$sigma)
+Y <- list(x1, x2)
+res <- jointGHS(Y, epsilon = 1e-3, AIC_eps = 1e-3)
+adj.mat1 <- abs(cov2cor(res$theta[[1]])) > 1e-5 # the estimated adjacency matrix of graph 1
+adj.mat2 <- abs(cov2cor(res$theta[[2]])) > 1e-5 # the estimated adjacency matrix of graph 2
+sparsity(adj.mat1) # the sparsities of the estimated precision matrices
+sparsity(adj.mat2) # Very sparse as little data is available, and no shared information
+# slightly lower precision as no information could be borrowed across classes, but still very high
+precision(abs(prec.mat) > 1e-7, adj.mat1)
+precision(abs(prec.mat) > 1e-7, adj.mat2)
+
+```
+
+The resulting jointGHS graphs can be visualised with functions from the `network` and `ggnet2` libraries. 
+
+```{r,fig.align='center', out.width='60%',results='hide',warning=FALSE}
+set.seed(1234)
+net1 <- network::network(adj.mat1.1)
+net2 <- network::network(adj.mat2.1)
+g1 <- GGally::ggnet2(net1, alpha = 0.7, color = "darkblue")
+g2 <- GGally::ggnet2(net2, alpha = 0.7, color = "darkblue")
+ggpubr::ggarrange(g1, g2, ncol = 2, nrow = 1)
+```
+
+
+
+## References

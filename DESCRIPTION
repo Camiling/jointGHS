@@ -25,3 +25,4 @@ Imports: Rcpp (>= 1.0.6),
   GGally
 LinkingTo: Rcpp, 
   RcppArmadillo
+VignetteBuilder: knitr
