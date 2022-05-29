@@ -207,7 +207,7 @@ data.sf.3.1$sparsity # True sparsity: 0.04
 n.3.2=200
 p.3.2=50
 set.seed(1234567)
-graph.3.2 = mutate.graph(data.sf.3.1, 0.2)
+graph.3.2 = mutate.graph.old(data.sf.3.1, 0.2)
 theta.true.3.2 = graph.3.2$prec.mat
 tailoredGlasso::sparsity(theta.true.3.2!=0)
 # 0.04
@@ -287,7 +287,7 @@ data.sf.4.1$sparsity # True sparsity: 0.02
 n.4.2=200
 p.4.2=100
 set.seed(123456)
-graph.4.2 = mutate.graph(data.sf.4.1, 0.2)
+graph.4.2 = mutate.graph.old(data.sf.4.1, 0.2)
 theta.true.4.2 = graph.4.2$prec.mat
 tailoredGlasso::sparsity(theta.true.4.2!=0)
 # 0.02
@@ -298,7 +298,7 @@ x.sf.scaled.4.2 = scale(mvtnorm::rmvnorm(n.4.2, sigma = solve(graph.4.2$prec.mat
 n.4.3=150
 p.4.3=100
 set.seed(12345677)
-graph.4.3 = mutate.graph(data.sf.4.1, 0.2)
+graph.4.3 = mutate.graph.old(data.sf.4.1, 0.2)
 theta.true.4.3 = graph.4.3$prec.mat
 tailoredGlasso::sparsity(theta.true.4.3!=0)
 # 0.02
@@ -309,7 +309,7 @@ x.sf.scaled.4.3 = scale(mvtnorm::rmvnorm(n.4.3, sigma = solve(graph.4.3$prec.mat
 n.4.4=250
 p.4.4=100
 set.seed(12345688)
-graph.4.4 = mutate.graph(data.sf.4.1, 0.2)
+graph.4.4 = mutate.graph.old(data.sf.4.1, 0.2)
 theta.true.4.4 = graph.4.4$prec.mat
 tailoredGlasso::sparsity(theta.true.4.4!=0)
 # 0.02
@@ -345,31 +345,31 @@ theta3.est.4[which(abs(theta3.est.4) < 1e-5, arr.ind = T)] = 0
 theta4.est.4[which(abs(theta4.est.4) < 1e-5, arr.ind = T)] = 0
 
 tailoredGlasso::sparsity(theta1.est.4!=0)
-# 0.004646465
+# 0.005050505
 tailoredGlasso::sparsity(theta2.est.4!=0)
-# 0.003838384
+# 0.004646465
 tailoredGlasso::sparsity(theta3.est.4!=0)
-# 0.004040404
+# 0.004444444
 tailoredGlasso::sparsity(theta4.est.4!=0)
-# 0.003636364
+# 0.004848485
 
 tailoredGlasso::precision(as.matrix(theta.true.4.1!=0), theta1.est.4!=0)
 # 1
 tailoredGlasso::precision(as.matrix(theta.true.4.2!=0), theta2.est.4!=0)
-# 1
+# 0.9565217
 tailoredGlasso::precision(as.matrix(theta.true.4.3!=0), theta3.est.4!=0)
-# 0.95
+# 1
 tailoredGlasso::precision(as.matrix(theta.true.4.4!=0), theta4.est.4!=0)
 # 1
 
 tailoredGlasso::recall(as.matrix(theta.true.4.1!=0), theta1.est.4!=0)
-# 0.2323232
+# 0.2525253
 tailoredGlasso::recall(as.matrix(theta.true.4.2!=0), theta2.est.4!=0)
-# 0.1919192
+# 0.2222222
 tailoredGlasso::recall(as.matrix(theta.true.4.3!=0), theta3.est.4!=0)
-# 0.1919192
+# 0.2222222
 tailoredGlasso::recall(as.matrix(theta.true.4.4!=0), theta4.est.4!=0)
-# 0.1818182
+# 0.2424242
 
 res.joint.4$tau_sq
 # 12.401  5.201  7.601  3.401
@@ -400,7 +400,7 @@ tailoredGlasso::precision(as.matrix(theta.true.4.2!=0), theta.est.ecmghs.4.2!=0)
 tailoredGlasso::recall(as.matrix(theta.true.4.2!=0), theta.est.ecmghs.4.2!=0)
 # 0.1919192
 
-# Same as jointGHS
+# Similar to jointGHS
 
 set.seed(22)
 res.ecmghs.4.3 <- fastGHS(x.sf.scaled.4.3,tau_sq = 0.006,epsilon = 1e-3, fix_tau=TRUE)
@@ -413,7 +413,7 @@ tailoredGlasso::precision(as.matrix(theta.true.4.3!=0), theta.est.ecmghs.4.3!=0)
 tailoredGlasso::recall(as.matrix(theta.true.4.3!=0), theta.est.ecmghs.4.3!=0)
 # 0.2020202
 
-# Better than jointGHS
+# Worse than jointGHS
 
 set.seed(22)
 res.ecmghs.4.4 <- fastGHS(x.sf.scaled.4.4,tau_sq = 0.0025,epsilon = 1e-3, fix_tau=TRUE)
@@ -426,39 +426,10 @@ tailoredGlasso::precision(as.matrix(theta.true.4.4!=0), theta.est.ecmghs.4.4!=0)
 tailoredGlasso::recall(as.matrix(theta.true.4.4!=0), theta.est.ecmghs.4.4!=0)
 # 0.1818182
 
-# Same as jointGHS
+# Worse than jointGHS
 
-# Similar results as jointGHS, biggest improvement for the network with the fewest observations
+# Better with jointGHS, biggest improvement for the network with the fewest observations
 
-
-# Compare to result from using only two networks: 
-
-# Use jointGHS on two of the data sets
-
-# Select tau_sq to get similar sparsity to the jointGHS results, to get comparable results
-set.seed(1234)
-res.joint.4.2 = jointGHS::jointGHS(list(x.sf.scaled.4.3, x.sf.scaled.4.4), AIC_selection = T, epsilon = 1e-3, AIC_eps = T)
-
-theta3.est.4.2 <- cov2cor(res.joint.4.2$theta[[1]])
-theta4.est.4.2 <- cov2cor(res.joint.4.2$theta[[2]])
-theta3.est.4.2[which(abs(theta3.est.4.2) < 1e-5, arr.ind = T)] = 0
-theta4.est.4.2[which(abs(theta4.est.4.2) < 1e-5, arr.ind = T)] = 0
-
-tailoredGlasso::sparsity(theta3.est.4.2!=0)
-# 0.004444444
-tailoredGlasso::sparsity(theta4.est.4.2!=0)
-# 0.004444444
-
-tailoredGlasso::precision(as.matrix(theta.true.4.3!=0), theta3.est.4.2!=0)
-# 0.9545455
-tailoredGlasso::precision(as.matrix(theta.true.4.4!=0), theta4.est.4.2!=0)
-# 1
-tailoredGlasso::recall(as.matrix(theta.true.4.3!=0), theta3.est.4.2!=0)
-# 0.2121212
-tailoredGlasso::recall(as.matrix(theta.true.4.4!=0), theta4.est.4.2!=0)
-# 0.2222222
-
-# Both precision and recall is worse than jointGHS with all networks for first network, recall a tiny bit better for the second. Overall, all four networks improves the estimates. 
 
 # EXAMPLE 5: ten datasets from related distributions, more high-dimensional ------------------------------------------------------------------
 
@@ -485,7 +456,7 @@ X.list.k = list(x.sf.scaled.5.1)
 theta.true.list.5 = list(theta.true.5.1)
 set.seed(1234)
 for (k in 2:K.5){
-  graph.k = mutate.graph(data.sf.5.1, 0.1)
+  graph.k = mutate.graph.old(data.sf.5.1, 0.1)
   X.list.k[[k]] = graph.k$data
   theta.true.list.5[[k]] = graph.k$prec.mat
 }
@@ -502,15 +473,15 @@ for(k in 1:K.5){
 
 # Sparsities
 unlist(lapply(thetas.est.5, FUN = function(s) tailoredGlasso::sparsity(s!=0)))
-# 0.004444444 0.005656566 0.004242424 0.004040404 0.004646465 0.002424242 0.004848485 0.004646465 0.003636364 0.003636364
+# 0.004848485 0.006464646 0.005050505 0.004848485 0.005454545 0.004646465 0.005454545 0.005454545 0.005454545 0.005050505
 
 # Precisions
 unlist(lapply(1:K.5, FUN = function(k) tailoredGlasso::precision(theta.true.list.5[[k]]!=0, thetas.est.5[[k]]!=0)))
-# 01.0000000 0.7857143 0.9047619 1.0000000 0.8695652 0.9166667 0.9583333 0.9130435 0.8888889 1.0000000
+# 1.0000000 0.7812500 0.9200000 0.9166667 0.9259259 0.9565217 0.9629630 0.9629630 0.8518519 1.0000000
 
 # Recalls
 unlist(lapply(1:K.5, FUN = function(k) tailoredGlasso::recall(theta.true.list.5[[k]]!=0, thetas.est.5[[k]]!=0)))
-# 0.2222222 0.2222222 0.1919192 0.2020202 0.2020202 0.1111111 0.2323232 0.2121212 0.1616162 0.1818182
+# 0.2424242 0.2525253 0.2323232 0.2222222 0.2525253 0.2222222 0.2626263 0.2626263 0.2323232 0.2525253
 
 # Computes in a few minutes
 
@@ -524,21 +495,21 @@ for(k in 1:3){
 
 # Sparsities
 unlist(lapply(thetas.est.5.2, FUN = function(s) tailoredGlasso::sparsity(s!=0)))
-# 0.004242424 0.004040404 0.004646465
-# Ten-network version: 0.004242424 0.004040404 0.004646465
+# 0.004444444 0.003838384 0.004646465
+# Ten-network version: 0.005050505 0.004848485 0.005454545
 
 theta.true.list.5.2 = list(theta.true.list.5[[3]], theta.true.list.5[[4]], theta.true.list.5[[5]])
 # Precisions
 unlist(lapply(1:3, FUN = function(k) tailoredGlasso::precision(theta.true.list.5.2[[k]]!=0, thetas.est.5.2[[k]]!=0)))
-# 0.9047619 1.0000000 0.8695652
-# Ten-network version: 0.9047619 1.0000000 0.8695652
+# 0.9090909 1.0000000 0.8695652
+# Ten-network version: 0.9200000 0.9166667 0.9259259
 
 # Recalls
 unlist(lapply(1:3, FUN = function(k) tailoredGlasso::recall(theta.true.list.5.2[[k]]!=0, thetas.est.5.2[[k]]!=0)))
-# 0.1919192 0.2020202 0.2020202
-# Ten-network version: 0.1919192 0.2020202 0.2020202
+# 0.2020202 0.1919192 0.2020202
+# Ten-network version: 0.2323232 0.2222222 0.2525253
 
-# Same results
+# Similar precision, better recall with more networks
 
 
 

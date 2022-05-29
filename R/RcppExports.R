@@ -15,17 +15,14 @@
 #' @param epsilon tolerance for the convergence assessment
 #' @param verbose logical indicator of printing information at each iteration
 #' @param maxitr maximum number of iterations
-#' @param savepath logical indicator of saving the estimator at each iteration in the ECM algorithm. Only available for p<200
-#' @param save_Q should the value of the objective function at each step be saved?
 #' @param tau_sq vector of initial values of the \eqn{K} squared global shrinkage parameters
-#' @param use_ICM logical. Should ICM be used instead of ECM? Default value is false
 #' @param fix_tau logical. Should tau be fixed?
 #' 
 #' @return A List with resulting ECM estimates, and saved path and objective function convergence information if requested
 #' 
 #' @export
 #'
-ECM_GHS <- function(S, theta, sigma, Lambda_sq, N, M, K, epsilon, verbose, maxitr, savepath, save_Q, tau_sq, use_ICM = FALSE, fix_tau = TRUE) {
-    .Call(`_jointGHS_ECM_GHS`, S, theta, sigma, Lambda_sq, N, M, K, epsilon, verbose, maxitr, savepath, save_Q, tau_sq, use_ICM, fix_tau)
+ECM_GHS <- function(S, theta, sigma, Lambda_sq, N, M, K, epsilon, verbose, maxitr, tau_sq, fix_tau = TRUE) {
+    .Call(`_jointGHS_ECM_GHS`, S, theta, sigma, Lambda_sq, N, M, K, epsilon, verbose, maxitr, tau_sq, fix_tau)
 }
 

@@ -12,8 +12,8 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // ECM_GHS
-List ECM_GHS(arma::cube S, arma::cube theta, arma::cube sigma, arma::cube Lambda_sq, arma::vec N, int M, int K, double epsilon, bool verbose, int maxitr, bool savepath, bool save_Q, arma::vec tau_sq, bool use_ICM, bool fix_tau);
-RcppExport SEXP _jointGHS_ECM_GHS(SEXP SSEXP, SEXP thetaSEXP, SEXP sigmaSEXP, SEXP Lambda_sqSEXP, SEXP NSEXP, SEXP MSEXP, SEXP KSEXP, SEXP epsilonSEXP, SEXP verboseSEXP, SEXP maxitrSEXP, SEXP savepathSEXP, SEXP save_QSEXP, SEXP tau_sqSEXP, SEXP use_ICMSEXP, SEXP fix_tauSEXP) {
+List ECM_GHS(arma::cube S, arma::cube theta, arma::cube sigma, arma::cube Lambda_sq, arma::vec N, int M, int K, double epsilon, bool verbose, int maxitr, arma::vec tau_sq, bool fix_tau);
+RcppExport SEXP _jointGHS_ECM_GHS(SEXP SSEXP, SEXP thetaSEXP, SEXP sigmaSEXP, SEXP Lambda_sqSEXP, SEXP NSEXP, SEXP MSEXP, SEXP KSEXP, SEXP epsilonSEXP, SEXP verboseSEXP, SEXP maxitrSEXP, SEXP tau_sqSEXP, SEXP fix_tauSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -27,18 +27,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type epsilon(epsilonSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
     Rcpp::traits::input_parameter< int >::type maxitr(maxitrSEXP);
-    Rcpp::traits::input_parameter< bool >::type savepath(savepathSEXP);
-    Rcpp::traits::input_parameter< bool >::type save_Q(save_QSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type tau_sq(tau_sqSEXP);
-    Rcpp::traits::input_parameter< bool >::type use_ICM(use_ICMSEXP);
     Rcpp::traits::input_parameter< bool >::type fix_tau(fix_tauSEXP);
-    rcpp_result_gen = Rcpp::wrap(ECM_GHS(S, theta, sigma, Lambda_sq, N, M, K, epsilon, verbose, maxitr, savepath, save_Q, tau_sq, use_ICM, fix_tau));
+    rcpp_result_gen = Rcpp::wrap(ECM_GHS(S, theta, sigma, Lambda_sq, N, M, K, epsilon, verbose, maxitr, tau_sq, fix_tau));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_jointGHS_ECM_GHS", (DL_FUNC) &_jointGHS_ECM_GHS, 15},
+    {"_jointGHS_ECM_GHS", (DL_FUNC) &_jointGHS_ECM_GHS, 12},
     {NULL, NULL, 0}
 };
 

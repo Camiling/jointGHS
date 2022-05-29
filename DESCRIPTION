@@ -22,6 +22,12 @@ Imports: Rcpp (>= 1.0.6),
   gridExtra, 
   network,
   igraph, 
+  knitr,
+  MASS,
+  ggpubr,
+  huge,
+  fastGHS,
+  stats,
   GGally
 LinkingTo: Rcpp, 
   RcppArmadillo

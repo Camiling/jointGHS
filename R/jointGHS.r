@@ -3,40 +3,36 @@
 #' This function performs expectation-conditional-maximation or iterated conditional mode estimation for the joint graphical horseshoe
 #' 
 #' @param X list of the \eqn{K} observed \eqn{n_k} by \eqn{p} data matrices
+#' @param epsilon tolerance for the convergence assessment
+#' @param AIC_eps if \code{AIC_selection=TRUE}, the tolerance for the AIC convergence assessment
 #' @param theta list of the \eqn{K} initial \eqn{p} by \eqn{p} precision matrices. Optional argument
 #' @param sigma list of the \eqn{K} initial \eqn{p} by \eqn{p} covariance matrices. Optional argument
 #' @param Lambda_sq list of the \eqn{K} initial \eqn{p} by \eqn{p} matrices of squared local shrinkage parameters. Optional argument
 #' @param tau_sq initial values of squared global shrinkage parameters. A vector of length \eqn{K}, or a single value to be used for all networks.
-#' @param method the method to use. Default is \code{ECM}. Other options include \code{ICM}
-#' @param AIC_selection logical. Should the global shrinkage parameters be selected with AIC? Default \code{TRUE}
-#' @param AIC_eps if \code{AIC_selection=TRUE}, the tolerance for the AIC convergence assessment
 #' @param tau_sq_min if \code{AIC_selection=TRUE}, the smallest value of \code{tau_sq} to consider  
 #' @param tau_sq_stepsize if \code{AIC_selection=TRUE}, the step-size to use in the grid for \code{tau_sq}. Optional argument
-#' @param tau_sq_max if \code{AIC_selection=TRUE}, the largest value of \code{tau_sq} to consider  
-#' @param epsilon tolerance for the convergence assessment
+#' @param tau_sq_max if \code{AIC_selection=TRUE}, the largest value of \code{tau_sq} to consider 
+#' @param stop_overflow should measures be taken to avoid overflow? Only necessary for very dense graphs with many large nonzero elements. 
 #' @param maxitr maximum number of iterations
 #' @param scale should variables be scaled? Default \code{TRUE}
 #' @param verbose logical indicator of printing information at each iteration
-#' @param savepath logical indicator of saving the estimator at each iteration in the ECM algorithm. Only available for \eqn{p<200}
-#' @param save_Q should the value of the objective function at each step be saved?
 #' @param fix_tau logical. Should \code{tau_sq} be fixed? Default \code{FALSE}
+#' @param AIC_selection logical. Should the global shrinkage parameters be selected with AIC? Default \code{TRUE}
 #' @param boot_check should bootstrapping be performed to check the joint results?
 #' @param B if \code{boot_check=TRUE}, the number of bootstrap samples to draw
 #' @param nCores if \code{boot_check=TRUE}, how many cores should be used for the bootstrap sampling?
-#' @param boot_lambda should \code{Lambda_sq} be bootstrapped? If \code{FALSE}, \code{theta} is bootstrapped instead
-#' @param stop_overflow should measures be taken to avoid overflow? Only necessary for very dense graphs with many large nonzero elements.
 #' 
 #' @return a fitted \code{jointGHS} object
 #' 
 #' @importFrom foreach %dopar%
+#' @importFrom ggplot2 ..density..
 #' 
-#' @seealso \code{\link{plot.jointGHS}}, \code{\link{print.jointGHS}} 
+#' @seealso \code{\link{plot_jointGHS}}, \code{\link{print_jointGHS}} 
 #' 
 #' @export 
 #' 
-jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, method= 'ECM', AIC_selection=TRUE, AIC_eps = 1e-1, tau_sq_min =1e-3, tau_sq_stepsize= NULL,tau_sq_max=20,
-                     epsilon = 1e-5, maxitr = 1e3, scale=TRUE, verbose=TRUE, savepath = FALSE, save_Q = FALSE, fix_tau = FALSE, boot_check=FALSE,
-                     B=100,nCores=5, boot_lambda=TRUE, stop_overflow=FALSE){
+jointGHS <- function(X, epsilon = 1e-5, AIC_eps = 1e-1, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, tau_sq_min =1e-3, tau_sq_stepsize= NULL,tau_sq_max=20,
+                     stop_overflow=FALSE, maxitr = 1e3, scale=TRUE, verbose=TRUE, fix_tau = FALSE, AIC_selection=TRUE, boot_check=FALSE, B=100,nCores=5){
 
   # If only one data set is provided, single-network version is used instead.
   if(!is.list(X)){
@@ -45,9 +41,9 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
     }
     # All other checks are performed within fastGHS
     cat('Single data set provided: performing single-network ECM for GHS \n')
-    out <- fastGHS::fastGHS(X, theta=theta, sigma=sigma, Lambda_sq = Lambda_sq, tau_sq = tau_sq, method = method, AIC_selection = AIC_selection, AIC_eps = AIC_eps,
+    out <- fastGHS::fastGHS(X, theta=theta, sigma=sigma, Lambda_sq = Lambda_sq, tau_sq = tau_sq, AIC_selection = AIC_selection, AIC_eps = AIC_eps,
                             tau_sq_min=tau_sq_min, tau_sq_stepsize = tau_sq_stepsize, tau_sq_max=tau_sq_max,
-                            epsilon = epsilon, maxitr = maxitr, scale=scale, verbose = verbose, savepath=savepath,save_Q=save_Q, fix_tau = fix_tau, stop_overflow = stop_overflow)
+                            epsilon = epsilon, maxitr = maxitr, scale=scale, verbose = verbose, fix_tau = fix_tau, stop_overflow = stop_overflow)
     class(out) = "jointGHS"
     return(out)
   }
@@ -144,17 +140,12 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
       stop('Negative tau_sq is not allowed \n')
     }
   }
-  
-  if(!method %in% c('ECM', 'ICM') ){
-    stop('Method must be either ECM or ICM')
-  }
-  use_ICM = method=='ICM'
-  
+
   # Select tau for each network using AIC crierion
   if(AIC_selection & !fix_tau){
     doParallel::registerDoParallel(K)
-    res.list = foreach (k=1:K) %dopar% {
-      fastGHS::fastGHS(X[[k]], theta=theta[,,k], sigma=sigma[,,k], Lambda_sq = Lambda_sq[,,k], tau_sq = tau_sq[k], method = method, 
+    res.list = foreach::foreach (k=1:K) %dopar% {
+      fastGHS::fastGHS(X[[k]], theta=theta[,,k], sigma=sigma[,,k], Lambda_sq = Lambda_sq[,,k], tau_sq = tau_sq[k],
                        AIC_selection=AIC_selection, AIC_eps = AIC_eps, tau_sq_min =tau_sq_min, tau_sq_stepsize= tau_sq_stepsize,tau_sq_max=tau_sq_max,
                        epsilon = epsilon, maxitr = maxitr, verbose = F, stop_overflow = stop_overflow);
     }
@@ -174,26 +165,23 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
   if(boot_check & AIC_selection & !fix_tau){
     perform_boot = c(0,rep(1,B)) # Ensures joint model is run in parallel as well
     doParallel::registerDoParallel(nCores)
-    boot.list = foreach (b=1:(B+1)) %dopar% {
-      boot_and_joint_parallel_iteration(X, S=S, n.vals = n.vals, p=p, K=K, theta=theta, sigma=sigma, Lambda_sq = Lambda_sq, tau_sq = tau_sq,method=method,
-                                        use_ICM = use_ICM, tau_sq_min = tau_sq_min, tau_sq_stepsize = tau_sq_stepsize, tau_sq_max = tau_sq_max, epsilon = epsilon, maxitr = maxitr, 
-                                        AIC_eps = AIC_eps, perform_boot=perform_boot[b], boot_lambda=boot_lambda);
+    boot.list = foreach::foreach (b=1:(B+1)) %dopar% {
+      boot_and_joint_parallel_iteration(X, S=S, n.vals = n.vals, p=p, K=K, theta=theta, sigma=sigma, Lambda_sq = Lambda_sq, tau_sq = tau_sq,
+                                        tau_sq_min = tau_sq_min, tau_sq_stepsize = tau_sq_stepsize, tau_sq_max = tau_sq_max, epsilon = epsilon, maxitr = maxitr, 
+                                        AIC_eps = AIC_eps, perform_boot=perform_boot[b],stop_overflow=stop_overflow);
     }
     foreach::registerDoSEQ()
     # Joint results
     out <- boot.list[[1]] 
     # Bootstrap results
     boot.res <- boot.list[-1]
-    if(boot_lambda){
-       boot.lambda.list = lapply(boot.res, FUN = function(s) s$Lambda_sq) # A length B list of length K lists
-    }
     boot.theta.list = lapply(boot.res, FUN = function(s) s$theta) # A length B list of length K lists
     
   }
   else{
     # Perform joint analysis
     if(AIC_selection) fix_tau = T # If tau has already been selected with the AIC for single networks
-    out <- ECM_GHS(S, theta, sigma, Lambda_sq, n.vals, p, K, epsilon, verbose, maxitr, savepath, save_Q, tau_sq, use_ICM = use_ICM, fix_tau = fix_tau)
+    out <- ECM_GHS(S, theta, sigma, Lambda_sq, n.vals, p, K, epsilon, verbose, maxitr, tau_sq, fix_tau = fix_tau)
   }
 
   # Make lists for the output
@@ -219,9 +207,6 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
     out$tau_sq_vals = tau_sq_vals
   }
   if(boot_check & exists('boot.theta.list')){
-    if(boot_lambda){
-      out$Lambda_sq_boot =boot.lambda.list
-    }
     out$theta_boot =boot.theta.list
   }
 
@@ -233,25 +218,45 @@ jointGHS <- function(X, theta=NULL,sigma=NULL,Lambda_sq=NULL, tau_sq = NULL, met
   return(out)
 }
 
+#' Perform bootstrap iterarion
+#' 
+#' This function performs one Bayesian bootstrap iteration
+#' 
+#' @param X list of the \eqn{K} observed \eqn{n_k} by \eqn{p} data matrices
+#' @param S list of the \eqn{p} by \eqn{p} scatter matrices of the \eqn{K} data sets
+#' @param n.vals vector of length \eqn{K} of the number of obervations in each data set.
+#' @param p number of nodes
+#' @param K number of networks
+#' @param theta list of the \eqn{K} initial \eqn{p} by \eqn{p} precision matrices. Optional argument
+#' @param sigma list of the \eqn{K} initial \eqn{p} by \eqn{p} covariance matrices. Optional argument
+#' @param Lambda_sq list of the \eqn{K} initial \eqn{p} by \eqn{p} matrices of squared local shrinkage parameters. Optional argument
+#' @param tau_sq initial values of squared global shrinkage parameters. A vector of length \eqn{K}, or a single value to be used for all networks.
+#' @param tau_sq_min if \code{AIC_selection=TRUE}, the smallest value of \code{tau_sq} to consider  
+#' @param tau_sq_stepsize if \code{AIC_selection=TRUE}, the step-size to use in the grid for \code{tau_sq}. Optional argument
+#' @param tau_sq_max if \code{AIC_selection=TRUE}, the largest value of \code{tau_sq} to consider  
+#' @param epsilon tolerance for the convergence assessment
+#' @param maxitr maximum number of iterations
+#' @param AIC_eps if \code{AIC_selection=TRUE}, the tolerance for the AIC convergence assessment
+#' @param perform_boot should bootstrapping be performed? if 1, yes, else perform joint
+#' @param stop_overflow should measures be taken to avoid overflow? Only necessary for very dense graphs with many large nonzero elements.
+#' 
+#' 
 #' @keywords internal
-boot_and_joint_parallel_iteration = function(X, S, n.vals, p, K, theta, sigma, Lambda_sq, tau_sq, method, use_ICM, tau_sq_min, tau_sq_stepsize, tau_sq_max,
-                                             epsilon, maxitr, AIC_eps, perform_boot, boot_lambda) {
+boot_and_joint_parallel_iteration = function(X, S, n.vals, p, K, theta, sigma, Lambda_sq, tau_sq, tau_sq_min, tau_sq_stepsize, tau_sq_max,
+                                             epsilon, maxitr, AIC_eps, perform_boot,stop_overflow) {
   if(perform_boot==1){
     # Use Bayesian bootstrap with weights sampled from the Dirichlet distribution
-    res = lapply(1:K, FUN = function(k) fastGHS::fastGHS(X[[k]], theta=theta[,,k], sigma=sigma[,,k], Lambda_sq = Lambda_sq[,,k], tau_sq = tau_sq[k], method = method, 
+    res = lapply(1:K, FUN = function(k) fastGHS::fastGHS(X[[k]], theta=theta[,,k], sigma=sigma[,,k], Lambda_sq = Lambda_sq[,,k], tau_sq = tau_sq[k], 
                            AIC_selection=T, AIC_eps = AIC_eps, tau_sq_min = tau_sq_min, tau_sq_stepsize= tau_sq_stepsize, tau_sq_max = tau_sq_max,
                            epsilon = epsilon, maxitr = maxitr, verbose = F, weights=c(gtools::rdirichlet(1, rep(1,nrow(X[[k]])))), stop_overflow = stop_overflow ))
     # Save only relevant output
     out = list()
-    if(boot_lambda){
-      out$Lambda_sq = lapply(res, FUN = function(s) s$Lambda_sq)
-    }
     out$theta = lapply(res, FUN = function(s) s$theta)
     
   }
   else{
     # Perform the joint analysis
-    out = ECM_GHS(S, theta, sigma, Lambda_sq, n.vals, p, K, epsilon, verbose=F, maxitr, savepath=F, save_Q=F, tau_sq, use_ICM = use_ICM, fix_tau = T)
+    out = ECM_GHS(S, theta, sigma, Lambda_sq, n.vals, p, K, epsilon, verbose=F, maxitr, tau_sq, fix_tau = T)
   }
   return(out)
   
@@ -267,14 +272,16 @@ boot_and_joint_parallel_iteration = function(X, S, n.vals, p, K, theta, sigma, L
 #' @param plot_boot should the Bayesian bootstrap sample posterior of some of the Lambda_sq be shown? If \code{FALSE}, the jointGHS networks are visualized instead
 #' @param edges the edges for which to show the Bayesian bootstrap posterior distribution. An matrix with \eqn{2} columns. If not specified, \eqn{15} edges are selected at random amongst the infererred jointGHS edge set
 #' @param percentile the percentile to show when plotting the Bayesian bootstrap posterior distribution of the local scale parameters.
-#' @param boot_lambda are we interested in the distribution of \code{Lambda_sq}?
+#' @param quantiles if provided, the quantiles to show when plotting the Bayesian bootstrap posterior distribution of the local scale parameters. Overrides \code{percentile} argument
 #' @param show_single should the estimate from the single network analysis be included as a bar?
 #' @param true_theta if provided, the 'true' value of \code{theta} to include as a bar in the plot
 #'
-#' @seealso \code{\link{jointGHS}}, \code{\link{print.jointGHS}}
+#' @seealso \code{\link{jointGHS}}, \code{\link{print_jointGHS}}
+#' 
+#' @importFrom ggplot2 ..density..
 #' 
 #' @export 
-plot.jointGHS = function(x, k=1, plot_boot=TRUE, edges = NA, percentile=95, quantiles = NULL, boot_lambda=FALSE, show_single=FALSE, true_theta=NULL){
+plot_jointGHS = function(x, k=1, plot_boot=TRUE, edges = NA, percentile=95, quantiles = NULL, show_single=FALSE, true_theta=NULL){
   p = ncol(x$theta[[k]])
   quantiles=c(0,percentile/100) # Show 0-quantile as well as percentile/100-quantile
   if(plot_boot){
@@ -307,11 +314,9 @@ plot.jointGHS = function(x, k=1, plot_boot=TRUE, edges = NA, percentile=95, quan
     }
     
     # If we are checking theta
-    if(!boot_lambda){
-      x$Lambda_sq_boot = x$theta_boot
-      x$Lambda_sq = lapply(x$theta, cov2cor) # Get correlation so we can compare regardless of diagonal element values
-      x$Lambda_sq_single = lapply(x$theta_single, cov2cor)
-    }
+    x$Lambda_sq_boot = x$theta_boot
+    x$Lambda_sq = lapply(x$theta, cov2cor) # Get correlation so we can compare regardless of diagonal element values
+    x$Lambda_sq_single = lapply(x$theta_single, cov2cor)
     if(!is.null(true_theta)){
       true_theta = cov2cor(true_theta)
     }
@@ -323,9 +328,9 @@ plot.jointGHS = function(x, k=1, plot_boot=TRUE, edges = NA, percentile=95, quan
     B = length(unlist(lapply(x$Lambda_sq_boot, FUN= function(s) s[[k]][1,2])))
     lambdas = matrix(0,n.edgepairs,B)
     for (e in 1:n.edgepairs){
-      lambdas[e,] = unlist(lapply(x$Lambda_sq_boot, FUN= function(s) ifelse(boot_lambda,s[[k]][edges[e,1],edges[e,2]],cov2cor(s[[k]])[edges[e,1],edges[e,2]] )))
+      lambdas[e,] = unlist(lapply(x$Lambda_sq_boot, FUN= function(s) cov2cor(s[[k]])[edges[e,1],edges[e,2]] ))
     }
-    xlab.name = ifelse(boot_lambda==T, 'Lambda_sq', 'theta')
+    xlab.name = 'theta'
     plot.list= lapply(1:n.edgepairs, FUN = function(j) ggplot2::ggplot(data.frame(Lambda_sq=lambdas[j,]),ggplot2::aes(x=Lambda_sq))+ggplot2::labs(title=paste0("Edge (", edges[j,1], ",", edges[j,2],")" ))+
         ggplot2::theme(plot.title = ggplot2::element_text(size = 10)) + ggplot2::ylab('Frequency')+ggplot2::xlab(xlab.name)+
         ggplot2::geom_histogram(ggplot2::aes(y=..density..),color='deepskyblue',fill='deepskyblue',bins=50) + ggplot2::theme(legend.position ="none") + 
@@ -397,14 +402,13 @@ plot.jointGHS = function(x, k=1, plot_boot=TRUE, edges = NA, percentile=95, quan
 #' @param edges the edges for which to show the Bayesian bootstrap posterior distribution. A matrix with \eqn{2} columns, or alternatively the string \code{'all'}. If not provided, \eqn{16} edges are selected at random amongst the infererred jointGHS edge set
 #' @param percentile the empirical percentile of the Bayesian bootstrap posterior distribution of the local scale parameters we want to show. Can also be a vector of length \eqn{2} for two-sided intervals
 #' @param return_df should the results be returned as a data frame? Default \code{FALSE}
-#' @param boot_lambda are we interested in the distribution of \code{Lambda_sq}?
 #'
 #' @return object of class \code{"data.frame"}
 #'
-#' @seealso \code{\link{jointGHS}}, \code{\link{plot.jointGHS}}
+#' @seealso \code{\link{jointGHS}}, \code{\link{plot_jointGHS}}
 #' 
 #' @export 
-print.jointGHS = function(x, k=1, edges = NA, percentile = 95, return_df=F, boot_lambda=FALSE){
+print_jointGHS = function(x, k=1, edges = NA, percentile = 95, return_df=F){
   p = ncol(x$theta[[k]])
   if(length(percentile)==2){
     quantiles=c(percentile[1]/100, percentile[2]/100)
@@ -435,18 +439,16 @@ print.jointGHS = function(x, k=1, edges = NA, percentile = 95, return_df=F, boot
   if(ncol(edges)!=2 | (is.null(dim(edges)) & length(edges)!=2)){
      stop('Edges must be a matrix with 2 columns, with one row per edge pair. \n')
   }
-  # If we are checking theta
-  if(!boot_lambda){
-    x$Lambda_sq_boot = x$theta_boot
-    x$Lambda_sq = x$theta
-  }
+  # Checking theta
+  x$Lambda_sq_boot = x$theta_boot
+  x$Lambda_sq = x$theta
   if(is.null(x$Lambda_sq_boot)){
     stop('Must provide jointGHS object that was found with option boot_check = TRUE')
   }
   n.edgepairs = nrow(edges) 
   B = length(unlist(lapply(x$Lambda_sq_boot, FUN= function(s) s[[k]][1,2])))
   lambdas = matrix(0,n.edgepairs,B)
-  var.name = ifelse(boot_lambda==T, 'Lambda_sq', 'theta')
+  var.name = 'theta'
   cat(paste0('\nCHECK PARAMETERS OF IDENTIFIED EDGES IN NETWORK k=',k, '\n'))
   if(onesided) partbar = '==========================================================================================\n'
   else partbar = '======================================================================================================================\n'
@@ -456,8 +458,8 @@ print.jointGHS = function(x, k=1, edges = NA, percentile = 95, return_df=F, boot
   df = data.frame()
   edges.outside=c()
   for (e in 1:n.edgepairs){
-    lambdas[e,] = unlist(lapply(x$Lambda_sq_boot, FUN= function(s) ifelse(boot_lambda, s[[k]][edges[e,1],edges[e,2]], cov2cor(s[[k]])[edges[e,1],edges[e,2]] )))
-    joint.est = ifelse(boot_lambda, x$Lambda_sq[[k]][edges[e,1],edges[e,2]], cov2cor(x$Lambda_sq[[k]])[edges[e,1],edges[e,2]])
+    lambdas[e,] = unlist(lapply(x$Lambda_sq_boot, FUN= function(s) cov2cor(s[[k]])[edges[e,1],edges[e,2]] ))
+    joint.est =  cov2cor(x$Lambda_sq[[k]])[edges[e,1],edges[e,2]]
     df[e,1] = paste0("(", edges[e,1], ",", edges[e,2],")")
     df[e,2] = round(joint.est,4)
     if(onesided){

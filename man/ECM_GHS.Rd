@@ -15,10 +15,7 @@ ECM_GHS(
   epsilon,
   verbose,
   maxitr,
-  savepath,
-  save_Q,
   tau_sq,
-  use_ICM = FALSE,
   fix_tau = TRUE
 )
 }
@@ -43,13 +40,7 @@ ECM_GHS(
 
 \item{maxitr}{maximum number of iterations}
 
-\item{savepath}{logical indicator of saving the estimator at each iteration in the ECM algorithm. Only available for p<200}
-
-\item{save_Q}{should the value of the objective function at each step be saved?}
-
 \item{tau_sq}{vector of initial values of the \eqn{K} squared global shrinkage parameters}
-
-\item{use_ICM}{logical. Should ICM be used instead of ECM? Default value is false}
 
 \item{fix_tau}{logical. Should tau be fixed?}
 }

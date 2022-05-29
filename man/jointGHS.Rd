@@ -6,32 +6,32 @@
 \usage{
 jointGHS(
   X,
+  epsilon = 1e-05,
+  AIC_eps = 0.1,
   theta = NULL,
   sigma = NULL,
   Lambda_sq = NULL,
   tau_sq = NULL,
-  method = "ECM",
-  AIC_selection = TRUE,
-  AIC_eps = 0.1,
   tau_sq_min = 0.001,
   tau_sq_stepsize = NULL,
   tau_sq_max = 20,
-  epsilon = 1e-05,
+  stop_overflow = FALSE,
   maxitr = 1000,
   scale = TRUE,
   verbose = TRUE,
-  savepath = FALSE,
-  save_Q = FALSE,
   fix_tau = FALSE,
+  AIC_selection = TRUE,
   boot_check = FALSE,
   B = 100,
-  nCores = 5,
-  boot_lambda = TRUE,
-  stop_overflow = FALSE
+  nCores = 5
 )
 }
 \arguments{
 \item{X}{list of the \eqn{K} observed \eqn{n_k} by \eqn{p} data matrices}
+
+\item{epsilon}{tolerance for the convergence assessment}
+
+\item{AIC_eps}{if \code{AIC_selection=TRUE}, the tolerance for the AIC convergence assessment}
 
 \item{theta}{list of the \eqn{K} initial \eqn{p} by \eqn{p} precision matrices. Optional argument}
 
@@ -41,19 +41,13 @@ jointGHS(
 
 \item{tau_sq}{initial values of squared global shrinkage parameters. A vector of length \eqn{K}, or a single value to be used for all networks.}
 
-\item{method}{the method to use. Default is \code{ECM}. Other options include \code{ICM}}
-
-\item{AIC_selection}{logical. Should the global shrinkage parameters be selected with AIC? Default \code{TRUE}}
-
-\item{AIC_eps}{if \code{AIC_selection=TRUE}, the tolerance for the AIC convergence assessment}
-
 \item{tau_sq_min}{if \code{AIC_selection=TRUE}, the smallest value of \code{tau_sq} to consider}
 
 \item{tau_sq_stepsize}{if \code{AIC_selection=TRUE}, the step-size to use in the grid for \code{tau_sq}. Optional argument}
 
 \item{tau_sq_max}{if \code{AIC_selection=TRUE}, the largest value of \code{tau_sq} to consider}
 
-\item{epsilon}{tolerance for the convergence assessment}
+\item{stop_overflow}{should measures be taken to avoid overflow? Only necessary for very dense graphs with many large nonzero elements.}
 
 \item{maxitr}{maximum number of iterations}
 
@@ -61,21 +55,15 @@ jointGHS(
 
 \item{verbose}{logical indicator of printing information at each iteration}
 
-\item{savepath}{logical indicator of saving the estimator at each iteration in the ECM algorithm. Only available for \eqn{p<200}}
-
-\item{save_Q}{should the value of the objective function at each step be saved?}
-
 \item{fix_tau}{logical. Should \code{tau_sq} be fixed? Default \code{FALSE}}
+
+\item{AIC_selection}{logical. Should the global shrinkage parameters be selected with AIC? Default \code{TRUE}}
 
 \item{boot_check}{should bootstrapping be performed to check the joint results?}
 
 \item{B}{if \code{boot_check=TRUE}, the number of bootstrap samples to draw}
 
 \item{nCores}{if \code{boot_check=TRUE}, how many cores should be used for the bootstrap sampling?}
-
-\item{boot_lambda}{should \code{Lambda_sq} be bootstrapped? If \code{FALSE}, \code{theta} is bootstrapped instead}
-
-\item{stop_overflow}{should measures be taken to avoid overflow? Only necessary for very dense graphs with many large nonzero elements.}
 }
 \value{
 a fitted \code{jointGHS} object
@@ -84,5 +72,5 @@ a fitted \code{jointGHS} object
 This function performs expectation-conditional-maximation or iterated conditional mode estimation for the joint graphical horseshoe
 }
 \seealso{
-\code{\link{plot.jointGHS}}, \code{\link{print.jointGHS}}
+\code{\link{plot_jointGHS}}, \code{\link{print_jointGHS}}
 }
